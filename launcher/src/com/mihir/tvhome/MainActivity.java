@@ -18,7 +18,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Outline;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -39,6 +44,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -115,7 +121,8 @@ public class MainActivity extends Activity {
     private int cols;
 
     static final class App {
-        String pkg, label;
+        String pkg, label; // an input's pkg is "input:<id>", so dock and hiding treat it like an app
+        String inputId;
         ComponentName component;
         Drawable art;
         boolean isBanner;
@@ -197,6 +204,15 @@ public class MainActivity extends Activity {
         }
     };
     static final String READ_TV_LISTINGS = "android.permission.READ_TV_LISTINGS";
+    static final String READ_PICTURES = "android.permission.READ_EXTERNAL_STORAGE";
+    // An HDMI device turned on or off: refresh the input tiles' "Connected" line.
+    private final Runnable rebuildApps = this::buildApps;
+    private final TvInputManager.TvInputCallback inputsChanged = new TvInputManager.TvInputCallback() {
+        @Override public void onInputStateChanged(String inputId, int state) { rebuildSoon(); }
+        @Override public void onInputAdded(String inputId) { rebuildSoon(); }
+        @Override public void onInputRemoved(String inputId) { rebuildSoon(); }
+        @Override public void onInputUpdated(String inputId) { rebuildSoon(); }
+    };
     private final ExecutorService io = Executors.newFixedThreadPool(2);
     private final LruCache<String, Bitmap> artCache = new LruCache<String, Bitmap>(48 * 1024 * 1024) {
         @Override protected int sizeOf(String key, Bitmap b) { return b.getByteCount(); }
@@ -290,6 +306,8 @@ public class MainActivity extends Activity {
         pf.addAction(Intent.ACTION_PACKAGE_CHANGED);
         pf.addDataScheme("package");
         registerReceiver(packages, pf);
+        TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
+        if (tim != null) tim.registerCallback(inputsChanged, handler);
 
         // Granted over ADB at install; ask once for sets where the launcher was installed by hand.
         if (checkSelfPermission(READ_TV_LISTINGS) != PackageManager.PERMISSION_GRANTED
@@ -367,6 +385,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         unregisterReceiver(packages);
+        TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
+        if (tim != null) tim.unregisterCallback(inputsChanged);
         io.shutdownNow();
         super.onDestroy();
     }
@@ -709,12 +729,33 @@ public class MainActivity extends Activity {
             a.color = sampleColor(a.pkg, a.art);
             byPkg.put(a.pkg, a);
         }
+        // TV inputs (HDMI, AV, …) as tiles too, so they can go in the dock.
+        TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
+        List<TvInputInfo> inputs = tim == null ? Collections.emptyList() : tim.getTvInputList();
+        // A port with an HDMI-CEC device on it ("PlayStation 5" on HDMI 1) shows once, as the device.
+        Set<String> ports = new HashSet<>();
+        for (TvInputInfo t : inputs) if (t.getParentId() != null) ports.add(t.getParentId());
+        for (TvInputInfo t : inputs) {
+            if (!t.isPassthroughInput() || t.isHidden(this) || ports.contains(t.getId())
+                    || hide.contains("input:" + t.getId())) continue;
+            App a = new App();
+            a.pkg = "input:" + t.getId();
+            a.inputId = t.getId();
+            a.label = inputLabel(t);
+            a.isBanner = true;
+            a.color = inputColors(t.getType())[1];
+            a.art = inputBanner(t, a.label, tim.getInputState(t.getId()) == TvInputManager.INPUT_STATE_CONNECTED);
+            byPkg.put(a.pkg, a);
+        }
 
         List<App> dock = new ArrayList<>();
         for (String p : prefs.dock()) if (byPkg.containsKey(p)) dock.add(byPkg.remove(p));
         List<App> rest = new ArrayList<>(byPkg.values());
         Collections.sort(rest, (x, y) -> x.label.compareToIgnoreCase(y.label));
 
+        // Keep focus on the same tile through a rebuild (ids are regenerated).
+        View had = getCurrentFocus();
+        if (focusPkg == null && had != null && had.getTag() instanceof App) focusPkg = ((App) had.getTag()).pkg;
         dockRow.removeAllViews();
         grid.removeAllViews();
         dockCards.clear();
@@ -807,10 +848,13 @@ public class MainActivity extends Activity {
         label.setAlpha(0f);
         if (!inDock) box.addView(label, llp(-1, -2, 0, dp(10), 0, 0));
 
-        card.setOnClickListener(v -> launch(new Intent(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
-                .setComponent(app.component)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)));
+        card.setOnClickListener(v -> {
+            if (app.inputId != null) { openInput(app.inputId); return; }
+            launch(new Intent(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
+                    .setComponent(app.component)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED));
+        });
         card.setOnLongClickListener(v -> { showAppMenu(v, app, inDock); return true; });
         card.setOnFocusChangeListener((v, has) -> {
             animateFocus(v, shine, label, has, inDock ? 1.12f : 1.1f);
@@ -1504,15 +1548,21 @@ public class MainActivity extends Activity {
                 buildApps();
             }));
         }
-        rows.add(menuRow("Hide app", () -> {
+        rows.add(menuRow(app.inputId != null ? "Hide input" : "Hide app", () -> {
             dock.remove(app.pkg);
             if (inDock) prefs.setDock(dock);
             prefs.setAppHidden(app.pkg, true);
             buildApps();
         }));
-        rows.add(menuRow("App info", () -> launch(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                Uri.parse("package:" + app.pkg)))));
-        showMenu(anchor, rows, dp(220), null);
+        if (app.inputId != null) {
+            rows.add(menuRow("Banner: designed", () -> setInputArt(app, "")));
+            rows.add(menuRow("Banner: built-in photo…", () -> showPhotoChoices(anchor, app)));
+            rows.add(menuRow("Banner: picture on the TV…", () -> showPictureChoices(anchor, app)));
+        } else {
+            rows.add(menuRow("App info", () -> launch(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + app.pkg)))));
+        }
+        showMenu(anchor, rows, dp(260), null);
     }
 
     private void moveInDock(List<String> dock, int from, int to) {
@@ -1549,6 +1599,11 @@ public class MainActivity extends Activity {
     }
 
     private String appLabel(String pkg) {
+        if (pkg.startsWith("input:")) {
+            TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
+            TvInputInfo t = tim == null ? null : tim.getTvInputInfo(pkg.substring(6));
+            return t == null ? "Input" : inputLabel(t);
+        }
         try {
             return String.valueOf(getPackageManager().getApplicationLabel(getPackageManager().getApplicationInfo(pkg, 0)));
         } catch (PackageManager.NameNotFoundException e) {
@@ -1719,17 +1774,159 @@ public class MainActivity extends Activity {
         }
         Collections.sort(inputs, (x, y) -> inputLabel(x).compareToIgnoreCase(inputLabel(y)));
         for (TvInputInfo t : inputs) {
-            rows.add(menuRow(inputLabel(t), () -> {
-                Intent i = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(t.getId()));
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                if (!launch(i)) openPackage(inputPickerPkg);
-            }));
+            rows.add(menuRow(inputLabel(t), () -> openInput(t.getId())));
         }
         if (isInstalled(liveTvPkg)) rows.add(menuRow("Live TV", () -> openPackage(liveTvPkg)));
         if (inputs.isEmpty() && isInstalled(inputPickerPkg)) rows.add(menuRow("All sources…", () -> openPackage(inputPickerPkg)));
 
         if (rows.isEmpty()) rows.add(menuRow("Settings", () -> launch(new Intent(Settings.ACTION_SETTINGS))));
         showMenu(anchor, rows, dp(200), null);
+    }
+
+    private void openInput(String inputId) {
+        Intent i = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(inputId));
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (!launch(i)) openPackage(inputPickerPkg);
+    }
+
+    private void rebuildSoon() {
+        handler.removeCallbacks(rebuildApps);
+        handler.postDelayed(rebuildApps, 400);
+    }
+
+    private void setInputArt(App app, String art) {
+        prefs.setChoice("input_art:" + app.inputId, art);
+        focusPkg = app.pkg;
+        buildApps();
+    }
+
+    private void showPhotoChoices(View anchor, App app) {
+        List<TextView> rows = new ArrayList<>();
+        for (int i = 0; i < wallpapers.length; i++) {
+            String name = "wallpapers/" + wallpapers[i];
+            rows.add(menuRow("Photo " + (i + 1), () -> setInputArt(app, "asset:" + name)));
+        }
+        showMenu(anchor, rows, dp(220), null);
+    }
+
+    /** The newest pictures on the TV (LocalSend, USB copies, screenshots), from the media store. */
+    private void showPictureChoices(View anchor, App app) {
+        List<TextView> rows = new ArrayList<>();
+        if (checkSelfPermission(READ_PICTURES) != PackageManager.PERMISSION_GRANTED) {
+            rows.add(menuRow("Allow access to pictures", () -> requestPermissions(new String[]{READ_PICTURES}, 2)));
+        } else {
+            String[] proj = {MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME};
+            try (Cursor c = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null,
+                    MediaStore.Images.Media.DATE_ADDED + " DESC")) {
+                while (c != null && c.moveToNext() && rows.size() < 30) {
+                    Uri uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, String.valueOf(c.getLong(0)));
+                    rows.add(menuRow(c.getString(1), () -> setInputArt(app, uri.toString())));
+                }
+            } catch (RuntimeException ignored) { }
+            if (rows.isEmpty()) rows.add(menuLabel("No pictures yet. Send one with LocalSend, then try again."));
+        }
+        showMenu(anchor, rows, dp(380), null);
+    }
+
+    /** Gradient start and end for an input's designed banner, by connector type. */
+    private static int[] inputColors(int type) {
+        switch (type) {
+            case TvInputInfo.TYPE_HDMI: return new int[]{0xFF241A55, 0xFF6C3FD1};
+            case TvInputInfo.TYPE_COMPOSITE: case TvInputInfo.TYPE_SVIDEO: case TvInputInfo.TYPE_SCART:
+                return new int[]{0xFF0B3F3D, 0xFF1C9C8F};
+            case TvInputInfo.TYPE_COMPONENT: return new int[]{0xFF4A2209, 0xFFD9822B};
+            default: return new int[]{0xFF1E2430, 0xFF4B5A70};
+        }
+    }
+
+    /** An input's tile: your picture (or a designed gradient with the connector), its name, and status. */
+    private Drawable inputBanner(TvInputInfo t, String label, boolean connected) {
+        int w = dp(320), h = w * 9 / 16;
+        Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bm);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        Bitmap photo = inputArt(prefs.choice("input_art:" + t.getId(), ""), w);
+        if (photo != null) {
+            float scale = Math.max((float) w / photo.getWidth(), (float) h / photo.getHeight());
+            float dw = photo.getWidth() * scale, dh = photo.getHeight() * scale;
+            c.drawBitmap(photo, null, new RectF((w - dw) / 2, (h - dh) / 2, (w + dw) / 2, (h + dh) / 2), new Paint(Paint.FILTER_BITMAP_FLAG));
+            paint.setShader(new LinearGradient(0, h * 0.35f, 0, h, 0x00000000, 0xD9000000, Shader.TileMode.CLAMP));
+            c.drawRect(0, 0, w, h, paint);
+        } else {
+            int[] col = inputColors(t.getType());
+            paint.setShader(new LinearGradient(0, 0, w, h, col[0], col[1], Shader.TileMode.CLAMP));
+            c.drawRect(0, 0, w, h, paint);
+            paint.setShader(null);
+            drawConnector(c, t.getType(), w, h);
+        }
+        paint.setShader(null);
+        float pad = w * 0.07f;
+        paint.setColor(Color.WHITE);
+        paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        paint.setTextSize(h * 0.2f);
+        String name = TextUtils.ellipsize(label, new android.text.TextPaint(paint), w - pad * 2, TextUtils.TruncateAt.END).toString();
+        c.drawText(name, pad, h - pad, paint);
+        paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        paint.setTextSize(h * 0.085f);
+        paint.setLetterSpacing(0.18f);
+        paint.setColor(connected ? 0xFFB9F6CA : 0xB3FFFFFF);
+        c.drawText(connected ? "● CONNECTED" : "INPUT", pad, h - pad - h * 0.24f, paint);
+        return new BitmapDrawable(getResources(), bm);
+    }
+
+    /** A large faint outline of the port: HDMI's trapezoid, AV's three jacks, or a plain socket. */
+    private void drawConnector(Canvas c, int type, int w, int h) {
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(h * 0.035f);
+        p.setColor(0x38FFFFFF);
+        p.setStrokeJoin(Paint.Join.ROUND);
+        float cx = w * 0.7f, cy = h * 0.38f, s = h * 0.42f;
+        if (type == TvInputInfo.TYPE_HDMI) {
+            Path port = new Path();
+            port.moveTo(cx - s * 0.9f, cy - s * 0.32f);
+            port.lineTo(cx + s * 0.9f, cy - s * 0.32f);
+            port.lineTo(cx + s * 0.9f, cy + s * 0.02f);
+            port.lineTo(cx + s * 0.62f, cy + s * 0.32f);
+            port.lineTo(cx - s * 0.62f, cy + s * 0.32f);
+            port.lineTo(cx - s * 0.9f, cy + s * 0.02f);
+            port.close();
+            c.drawPath(port, p);
+            c.drawLine(cx - s * 0.55f, cy - s * 0.02f, cx + s * 0.55f, cy - s * 0.02f, p);
+        } else if (type == TvInputInfo.TYPE_COMPOSITE || type == TvInputInfo.TYPE_COMPONENT) {
+            for (int i = -1; i <= 1; i++) {
+                c.drawCircle(cx + i * s * 0.62f, cy, s * 0.24f, p);
+                c.drawCircle(cx + i * s * 0.62f, cy, s * 0.07f, p);
+            }
+        } else {
+            c.drawRoundRect(new RectF(cx - s * 0.8f, cy - s * 0.35f, cx + s * 0.8f, cy + s * 0.35f), s * 0.12f, s * 0.12f, p);
+        }
+    }
+
+    /** A chosen banner picture: "asset:<path>" (a built-in photo) or a content:// picture. */
+    private Bitmap inputArt(String art, int want) {
+        if (art.isEmpty()) return null;
+        byte[] data;
+        if (art.startsWith("asset:")) {
+            try (InputStream in = getAssets().open(art.substring(6))) {
+                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                byte[] chunk = new byte[16384];
+                for (int n; (n = in.read(chunk)) != -1; ) buf.write(chunk, 0, n);
+                data = buf.toByteArray();
+            } catch (java.io.IOException e) {
+                return null;
+            }
+        } else {
+            data = readUri(art, 32 * 1024 * 1024);
+        }
+        if (data == null) return null;
+        BitmapFactory.Options o = new BitmapFactory.Options();
+        o.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(data, 0, data.length, o);
+        o.inSampleSize = 1;
+        while (o.outWidth / (o.inSampleSize * 2) >= want) o.inSampleSize *= 2;
+        o.inJustDecodeBounds = false;
+        return BitmapFactory.decodeByteArray(data, 0, data.length, o);
     }
 
     private String inputLabel(TvInputInfo t) {

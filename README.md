@@ -76,7 +76,10 @@ Undo everything with `tools/restore.sh <the same list>`.
 - **Settings › Home screen** on the TV: picks and your shows in the hero (each on its own), Continue
   watching, catalog rows, the background (title art, built-in photos, Bing photo of the day or
   random Picsum photos), and the dock's place (left, centre or right; its glass fits the apps).
-  Long press (or Menu) any tile or card for its options. **Settings › Power** restarts the TV or puts
+  Long press (or Menu) any tile or card for its options.
+- **TV inputs as tiles** (HDMI, AV, …) under the TV's own names ("PlayStation 5" over HDMI 1 when it
+  speaks HDMI-CEC), with a "Connected" line. Add them to the dock like apps. Each gets a designed
+  banner, or long press to use a built-in photo or a picture on the TV (send one with LocalSend). **Settings › Power** restarts the TV or puts
   it in standby, through a small accessibility service the install script enables.
 - 12 nature photos crossfade every 10 minutes, with a scrim so text stays readable. Swap them in
   `launcher/assets/wallpapers/` (1920×1080 JPEGs, credits in `launcher/WALLPAPER-CREDITS.md`).

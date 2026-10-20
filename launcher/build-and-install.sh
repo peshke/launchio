@@ -36,6 +36,7 @@ printf '%s\n' \
   "rm -f /data/local/tmp/tvhome.apk" \
   "pm grant com.mihir.tvhome android.permission.ACCESS_FINE_LOCATION" \
   "pm grant com.mihir.tvhome android.permission.READ_TV_LISTINGS" \
+  "pm grant com.mihir.tvhome android.permission.READ_EXTERNAL_STORAGE" \
   "cmd notification allow_listener com.mihir.tvhome/com.mihir.tvhome.NowPlayingListener" \
   's=$(settings get secure enabled_accessibility_services); case "$s" in *tvhome/.PowerService*) ;; null|"") settings put secure enabled_accessibility_services com.mihir.tvhome/.PowerService ;; *) settings put secure enabled_accessibility_services "$s:com.mihir.tvhome/.PowerService" ;; esac' \
   "settings put secure accessibility_enabled 1" \

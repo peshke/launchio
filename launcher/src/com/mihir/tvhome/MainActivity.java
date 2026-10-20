@@ -699,9 +699,14 @@ public class MainActivity extends Activity {
         dockCards.clear();
         gridCards.clear();
 
+        // Tiles keep the width they have in a five-app dock, centred, so a shorter dock doesn't
+        // grow taller (tiles are 16:9); a longer one shrinks them to fit.
+        int dockInner = getResources().getDisplayMetrics().widthPixels - dp(48) * 2 - dp(20) * 2;
+        int slots = Math.max(5, dock.size());
+        int tileW = (dockInner - dp(20) * (slots - 1)) / slots;
         for (int i = 0; i < dock.size(); i++) {
             View tile = tile(dock.get(i), true);
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -2, 1f);
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(tileW, -2);
             p.setMargins(i == 0 ? 0 : dp(10), 0, i == dock.size() - 1 ? 0 : dp(10), 0);
             dockRow.addView(tile, p);
         }

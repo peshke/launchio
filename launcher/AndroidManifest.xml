@@ -48,6 +48,18 @@
             </intent-filter>
         </activity>
 
+        <!-- Restart and standby from the Settings menu (accessibility, enabled over ADB). -->
+        <service
+            android:name=".PowerService"
+            android:exported="true"
+            android:label="@string/power_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/power_service" />
+        </service>
+
         <!-- Lets the launcher see what music apps are playing (notification access, granted over ADB). -->
         <service
             android:name=".NowPlayingListener"

@@ -109,7 +109,8 @@ public class MainActivity extends Activity {
     private final List<CatalogSpec> catalogSpecs = new ArrayList<>(); // the rows switched on
     private final Map<String, CatalogSpec> allCatalogs = new LinkedHashMap<>();
     private final List<String> defaultCatalogs = new ArrayList<>();
-    private boolean heroOn, heroShows, continueOn;
+    private boolean heroOn, heroShows, continueOn; // heroOn: catalog picks take turns in the hero
+    private String background, dockAlign; // titles | photos | bing | picsum; left | center | right
     private String catalogAddon, openInPkg, openInLabel;
     private int cols;
 
@@ -183,6 +184,10 @@ public class MainActivity extends Activity {
     private long wallChangedAt;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable rotateWallpaper = this::nextWallpaper;
+    private final Runnable rotateHero = this::nextHero;
+    private long heroChangedAt;
+    private final List<String> bingPhotos = new ArrayList<>(); // io threads only, under its lock
+    private long bingPhotosAt;
     private final Runnable refreshContinue = this::loadContinue;
     // Apps update Watch Next as playback stops, often just after Home is pressed: reload on change.
     private final ContentObserver watchNextObserver = new ContentObserver(handler) {
@@ -252,6 +257,8 @@ public class MainActivity extends Activity {
         heroOn = prefs.flag("hero", true);
         heroShows = prefs.flag("hero_shows", true);
         continueOn = prefs.flag("continue", true);
+        background = prefs.choice("background", "titles");
+        dockAlign = prefs.choice("dock_align", "center");
         if (!catalogAddon.isEmpty()) {
             for (String row : getResources().getStringArray(R.array.catalog_rows)) {
                 CatalogSpec c = parseCatalog(row);
@@ -331,17 +338,23 @@ public class MainActivity extends Activity {
         try {
             getContentResolver().registerContentObserver(TvContract.WatchNextPrograms.CONTENT_URI, true, watchNextObserver);
         } catch (RuntimeException ignored) { } // no TV provider
-        // New photo (or featured pick) on return if the current one has been up for the full interval.
-        long interval = featured.isEmpty() ? WALLPAPER_INTERVAL_MS : FEATURED_INTERVAL_MS;
-        long shown = SystemClock.elapsedRealtime() - wallChangedAt;
-        if ((wallIndex < 0 && featured.isEmpty()) || shown >= interval) nextWallpaper();
-        else scheduleWallpaper(interval - shown);
+        // On return, move on to the next pick and photo if the current ones have had their time.
+        long now = SystemClock.elapsedRealtime();
+        if (!featured.isEmpty()) {
+            if (now - heroChangedAt >= FEATURED_INTERVAL_MS) nextHero();
+            else scheduleHero(FEATURED_INTERVAL_MS - (now - heroChangedAt));
+        }
+        if (!(titleBackdrops() && !featured.isEmpty())) {
+            if (wallChangedAt == 0 || now - wallChangedAt >= WALLPAPER_INTERVAL_MS) nextWallpaper();
+            else scheduleWallpaper(WALLPAPER_INTERVAL_MS - (now - wallChangedAt));
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         handler.removeCallbacks(rotateWallpaper);
+        handler.removeCallbacks(rotateHero);
         handler.removeCallbacks(refreshContinue);
         handler.removeCallbacks(pendingBackdrop);
         unwatchSessions();
@@ -438,8 +451,9 @@ public class MainActivity extends Activity {
         title = text(34, "sans-serif-light", Color.WHITE);
         title.setShadowLayer(dp(18), 0, 0, 0x66000000);
         title.setSingleLine(true);
-        bottom.addView(title, new LinearLayout.LayoutParams(-2, -2));
-        ((LinearLayout.LayoutParams) title.getLayoutParams()).setMargins(dp(8), 0, 0, dp(14));
+        LinearLayout.LayoutParams tp = llp(-2, -2, dp(8), 0, dp(8), dp(14));
+        tp.gravity = dockGravity();
+        bottom.addView(title, tp);
 
         dockRow = new LinearLayout(this);
         dockRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -452,7 +466,10 @@ public class MainActivity extends Activity {
         band.setColor(0x1FFFFFFF);
         band.setStroke(dp(1), 0x14FFFFFF);
         dockRow.setBackground(band);
-        bottom.addView(dockRow, new LinearLayout.LayoutParams(-1, -2));
+        // The glass band wraps the docked apps and sits where Settings › Home screen puts it.
+        LinearLayout.LayoutParams dockLp = new LinearLayout.LayoutParams(-2, -2);
+        dockLp.gravity = dockGravity();
+        bottom.addView(dockRow, dockLp);
 
         continueRow = addMediaRow("Continue watching");
         for (CatalogSpec c : catalogSpecs) catalogRows.add(addMediaRow(c.name));
@@ -468,6 +485,10 @@ public class MainActivity extends Activity {
         grid.setClipToPadding(false);
         content.addView(grid, llp(-1, -2, dp(68), 0, dp(68), dp(160)));
         return root;
+    }
+
+    private int dockGravity() {
+        return "left".equals(dockAlign) ? Gravity.START : "right".equals(dockAlign) ? Gravity.END : Gravity.CENTER_HORIZONTAL;
     }
 
     private View buildHeader() {
@@ -598,7 +619,7 @@ public class MainActivity extends Activity {
             if (code != KeyEvent.KEYCODE_DPAD_LEFT && code != KeyEvent.KEYCODE_DPAD_RIGHT) return false;
             if (e.getAction() == KeyEvent.ACTION_DOWN) {
                 showFeatured(featuredIndex + (code == KeyEvent.KEYCODE_DPAD_RIGHT ? 1 : -1));
-                scheduleWallpaper(FEATURED_INTERVAL_MS);
+                scheduleHero(FEATURED_INTERVAL_MS);
             }
             return true;
         });
@@ -850,7 +871,7 @@ public class MainActivity extends Activity {
      *  READ_TV_LISTINGS; without it the row stays hidden. */
     private void loadContinue() {
         if (checkSelfPermission(READ_TV_LISTINGS) != PackageManager.PERMISSION_GRANTED
-                || (!continueOn && !(heroOn && heroShows))) {
+                || (!continueOn && !heroShows)) {
             showRow(continueRow, Collections.emptyList());
             return;
         }
@@ -1095,7 +1116,7 @@ public class MainActivity extends Activity {
     /** The shows you were last watching join the hero. */
     private void setShows(List<Media> list) {
         showsFeatured.clear();
-        if (heroOn && heroShows) for (Media m : list) {
+        if (heroShows) for (Media m : list) {
             if (showsFeatured.size() == HERO_SHOWS) break;
             if (backdropOf(m) != null) showsFeatured.add(m);
         }
@@ -1124,8 +1145,9 @@ public class MainActivity extends Activity {
             heroShade.animate().alpha(1f).setDuration(600).start();
             glow.animate().alpha(glow.getAlpha() * 0.35f).setDuration(600).start();
             wireFocus();
+            if (titleBackdrops()) handler.removeCallbacks(rotateWallpaper); // backdrops follow the hero now
             showFeatured(0);
-            scheduleWallpaper(FEATURED_INTERVAL_MS);
+            scheduleHero(FEATURED_INTERVAL_MS);
         } else if (same) {
             featuredIndex = at;
             featuredCount.setText((at + 1) + " / " + all.size());
@@ -1143,7 +1165,7 @@ public class MainActivity extends Activity {
         int n = featured.size();
         featuredIndex = ((i % n) + n) % n;
         Media m = featured.get(featuredIndex);
-        wallChangedAt = SystemClock.elapsedRealtime();
+        heroChangedAt = SystemClock.elapsedRealtime();
         featuredName.setText(m.title);
         featuredName.setVisibility(View.VISIBLE);
         featuredLogo.setVisibility(View.GONE);
@@ -1179,7 +1201,7 @@ public class MainActivity extends Activity {
 
     /** Crossfade the background to a title's backdrop. */
     private void showBackdrop(String uri) {
-        if (TextUtils.isEmpty(uri) || uri.equals(backdropShown)) return;
+        if (!titleBackdrops() || TextUtils.isEmpty(uri) || uri.equals(backdropShown)) return;
         backdropWanted = uri;
         int want = getResources().getDisplayMetrics().widthPixels;
         String key = uri + "@" + want;
@@ -1538,7 +1560,17 @@ public class MainActivity extends Activity {
         List<TextView> rows = new ArrayList<>();
         rows.add(menuRow("TV settings", () -> launch(new Intent(Settings.ACTION_SETTINGS))));
         rows.add(menuRow("Home screen…", () -> showHomeSettings(anchor)));
-        showMenu(anchor, rows, dp(200), null);
+        rows.add(menuLabel("Power"));
+        rows.add(menuRow("Restart…", () -> power(PowerService.GLOBAL_ACTION_POWER_DIALOG)));
+        rows.add(menuRow("Turn off (standby)", () -> power(PowerService.GLOBAL_ACTION_LOCK_SCREEN)));
+        showMenu(anchor, rows, dp(220), null);
+    }
+
+    /** Through the accessibility service; without it, send you to switch it on. */
+    private void power(int action) {
+        PowerService service = PowerService.running;
+        if (service != null && service.performGlobalAction(action)) return;
+        launch(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
     }
 
     /** Hero, rows and hidden apps; the home screen rebuilds when the panel closes. */
@@ -1546,7 +1578,7 @@ public class MainActivity extends Activity {
         settingsChanged = false;
         List<TextView> rows = new ArrayList<>();
         rows.add(menuLabel("Home screen"));
-        rows.add(menuToggle("Featured hero", prefs.flag("hero", true), on -> prefs.setFlag("hero", on)));
+        rows.add(menuToggle("Picks in the hero", prefs.flag("hero", true), on -> prefs.setFlag("hero", on)));
         rows.add(menuToggle("Your shows in the hero", prefs.flag("hero_shows", true), on -> prefs.setFlag("hero_shows", on)));
         rows.add(menuToggle("Continue watching", prefs.flag("continue", true), on -> prefs.setFlag("continue", on)));
         if (!allCatalogs.isEmpty()) {
@@ -1567,8 +1599,14 @@ public class MainActivity extends Activity {
                 rows.add(menuRow("Show " + appLabel(pkg), () -> { prefs.setAppHidden(pkg, false); buildApps(); }));
             }
         }
+        rows.add(menuLabel("Background"));
+        rows.addAll(menuChoices("background", background, new String[][]{
+                {"titles", "Title art"}, {"photos", "Built-in photos"},
+                {"bing", "Bing photo of the day"}, {"picsum", "Random photos (Picsum)"}}));
         rows.add(menuLabel("Dock"));
-        rows.add(menuRow("Reset dock to default", () -> { prefs.resetDock(); buildApps(); }));
+        rows.addAll(menuChoices("dock_align", dockAlign, new String[][]{
+                {"left", "Left"}, {"center", "Centre"}, {"right", "Right"}}));
+        rows.add(menuRow("Reset dock apps to default", () -> { prefs.resetDock(); buildApps(); }));
         showMenu(anchor, rows, dp(300), () -> { if (settingsChanged) recreate(); });
     }
 
@@ -1761,6 +1799,7 @@ public class MainActivity extends Activity {
         boolean on;
         final Consumer<Boolean> set;
         Runnable changed;
+        List<TextView> group; // set for one-of-several choices: picking one clears the others
 
         Toggle(String label, boolean on, Consumer<Boolean> set) { this.label = label; this.on = on; this.set = set; }
 
@@ -1771,6 +1810,14 @@ public class MainActivity extends Activity {
         }
 
         void flip(TextView v) {
+            if (group != null) {
+                if (on) return;
+                for (TextView g : group) {
+                    Toggle o = (Toggle) g.getTag();
+                    o.on = false;
+                    g.setText(o.text());
+                }
+            }
             on = !on;
             v.setText(text());
             set.accept(on);
@@ -1785,6 +1832,16 @@ public class MainActivity extends Activity {
         r.setText(t.text());
         r.setTag(t);
         return r;
+    }
+
+    /** One-of-several settings rows, stored under {@code key} as the chosen option's value. */
+    private List<TextView> menuChoices(String key, String current, String[][] options) {
+        List<TextView> rows = new ArrayList<>();
+        for (String[] o : options) {
+            rows.add(menuToggle(o[1], o[0].equals(current), on -> { if (on) prefs.setChoice(key, o[0]); }));
+        }
+        for (TextView r : rows) ((Toggle) r.getTag()).group = rows;
+        return rows;
     }
 
     private TextView menuLabel(String label) {
@@ -1852,7 +1909,8 @@ public class MainActivity extends Activity {
         glowColor = color;
         GradientDrawable g = new GradientDrawable();
         g.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        g.setGradientCenter(0.5f, 0.78f);
+        // The glow sits behind the dock, wherever it is.
+        g.setGradientCenter("left".equals(dockAlign) ? 0.28f : "right".equals(dockAlign) ? 0.72f : 0.5f, 0.78f);
         g.setGradientRadius(getResources().getDisplayMetrics().widthPixels * 0.62f);
         g.setColors(new int[]{withAlpha(color, 0.5f), withAlpha(color, 0.14f), Color.TRANSPARENT});
         glow.setBackground(g);
@@ -1881,21 +1939,41 @@ public class MainActivity extends Activity {
         return v;
     }
 
-    /** Decode the next photo off the main thread, then crossfade it in over the current one. */
+    /** Title backdrops behind the hero (the default), or a photo source from Settings. */
+    private boolean titleBackdrops() {
+        return "titles".equals(background);
+    }
+
+    /** Next pick in the hero; it holds while you're on its button or browsing cards. */
+    private void nextHero() {
+        handler.removeCallbacks(rotateHero);
+        if (featured.isEmpty()) return;
+        if (!featuredButton.hasFocus() && !mediaCardFocused()) showFeatured(featuredIndex + 1);
+        scheduleHero(FEATURED_INTERVAL_MS);
+    }
+
+    private void scheduleHero(long delay) {
+        handler.removeCallbacks(rotateHero);
+        handler.postDelayed(rotateHero, Math.max(1000, delay));
+    }
+
+    /** Next background photo: built-in, Bing's photos of the day, or a random one from Picsum. */
     private void nextWallpaper() {
         handler.removeCallbacks(rotateWallpaper);
-        if (!featured.isEmpty()) {
-            // Featured picks replace the photos; hold the current one while it's being looked at.
-            if (!featuredButton.hasFocus() && !mediaCardFocused()) showFeatured(featuredIndex + 1);
-            scheduleWallpaper(FEATURED_INTERVAL_MS);
-            return;
-        }
-        if (wallpapers.length == 0) return;
+        if (titleBackdrops() && !featured.isEmpty()) return; // the hero's backdrops are the background
         backdropShown = null;
+        wallChangedAt = SystemClock.elapsedRealtime();
+        if ("bing".equals(background) || "picsum".equals(background)) nextOnlinePhoto();
+        else nextBuiltInPhoto();
+        scheduleWallpaper(WALLPAPER_INTERVAL_MS);
+    }
+
+    /** Decode the next built-in photo off the main thread, then crossfade it in. */
+    private void nextBuiltInPhoto() {
+        if (wallpapers.length == 0) return;
         if (wallIndex < 0) wallIndex = getPreferences(MODE_PRIVATE).getInt("wallpaper", -1);
         wallIndex = (wallIndex + 1) % wallpapers.length;
         getPreferences(MODE_PRIVATE).edit().putInt("wallpaper", wallIndex).apply();
-        wallChangedAt = SystemClock.elapsedRealtime();
         String name = "wallpapers/" + wallpapers[wallIndex];
         new Thread(() -> {
             Bitmap bm = null;
@@ -1905,9 +1983,48 @@ public class MainActivity extends Activity {
                 bm = BitmapFactory.decodeStream(in, null, o);
             } catch (java.io.IOException ignored) { }
             Bitmap result = bm;
-            runOnUiThread(() -> { if (featured.isEmpty()) showWallpaper(result, firstWallpaper ? 600 : 2000); });
+            runOnUiThread(() -> {
+                if (!(titleBackdrops() && !featured.isEmpty())) showWallpaper(result, firstWallpaper ? 600 : 2000);
+            });
         }).start();
-        scheduleWallpaper(WALLPAPER_INTERVAL_MS);
+    }
+
+    /** Fetch a photo from the chosen service; offline, fall back to the built-in ones. */
+    private void nextOnlinePhoto() {
+        int want = getResources().getDisplayMetrics().widthPixels;
+        int turn = wallIndex = wallIndex + 1;
+        try {
+            io.execute(() -> {
+                String url = "picsum".equals(background)
+                        ? "https://picsum.photos/1920/1080?random=" + SystemClock.elapsedRealtime()
+                        : bingPhoto(turn);
+                Bitmap bm = url == null ? null : decodeArt(url, want, false);
+                runOnUiThread(() -> {
+                    if (isDestroyed()) return;
+                    if (bm != null) showWallpaper(bm, firstWallpaper ? 600 : 2000);
+                    else nextBuiltInPhoto();
+                });
+            });
+        } catch (RejectedExecutionException ignored) { }
+    }
+
+    /** Bing's last eight photos of the day (1920×1080), refreshed twice a day. */
+    private String bingPhoto(int turn) {
+        synchronized (bingPhotos) {
+            if (bingPhotos.isEmpty() || SystemClock.elapsedRealtime() - bingPhotosAt > 12 * 60 * 60 * 1000) {
+                byte[] data = readUri("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8", 1024 * 1024);
+                if (data != null) try {
+                    JSONArray images = new JSONObject(new String(data, StandardCharsets.UTF_8)).optJSONArray("images");
+                    List<String> urls = new ArrayList<>();
+                    for (int i = 0; images != null && i < images.length(); i++) {
+                        String u = images.optJSONObject(i) == null ? null : str(images.optJSONObject(i), "url");
+                        if (u != null) urls.add(u.startsWith("http") ? u : "https://www.bing.com" + u);
+                    }
+                    if (!urls.isEmpty()) { bingPhotos.clear(); bingPhotos.addAll(urls); bingPhotosAt = SystemClock.elapsedRealtime(); }
+                } catch (JSONException ignored) { }
+            }
+            return bingPhotos.isEmpty() ? null : bingPhotos.get(Math.floorMod(turn, bingPhotos.size()));
+        }
     }
 
     private void showWallpaper(Bitmap bm, long fadeMs) {

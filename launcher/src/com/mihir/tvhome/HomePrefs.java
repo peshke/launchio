@@ -58,6 +58,10 @@ final class HomePrefs {
 
     boolean flag(String key, boolean def) { return p.getBoolean(key, def); }
 
+    String choice(String key, String def) { return p.getString(key, def); }
+
+    void setChoice(String key, String value) { p.edit().putString(key, value).apply(); }
+
     void setFlag(String key, boolean on) { p.edit().putBoolean(key, on).apply(); }
 
     /** Catalog rows switched on, as "type/id" keys; the config.xml rows until changed on the TV. */

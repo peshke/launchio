@@ -73,6 +73,11 @@ Undo everything with `tools/restore.sh <the same list>`.
   each catalog gets a sideways row under Continue watching. Focusing any card swaps the background
   to its backdrop. Picks open through Nuvio's `nuvio://meta` link. Pick the add-on, rows and app in
   `config.xml`; an empty `catalog_addon` keeps the photos. Offline, the photos come back.
+- **Settings › Home screen** on the TV: picks and your shows in the hero (each on its own), Continue
+  watching, catalog rows, the background (title art, built-in photos, Bing photo of the day or
+  random Picsum photos), and the dock's place (left, centre or right; its glass fits the apps).
+  Long press (or Menu) any tile or card for its options. **Settings › Power** restarts the TV or puts
+  it in standby, through a small accessibility service the install script enables.
 - 12 nature photos crossfade every 10 minutes, with a scrim so text stays readable. Swap them in
   `launcher/assets/wallpapers/` (1920×1080 JPEGs, credits in `launcher/WALLPAPER-CREDITS.md`).
 - Deterministic D-pad focus, remembers the last tile, picks up newly installed apps on return.

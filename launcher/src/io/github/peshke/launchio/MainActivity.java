@@ -1079,25 +1079,32 @@ public class MainActivity extends Activity {
 
     /** Fetch the catalog rows off the main thread; refetch on return once they're a few hours old. */
     private void loadCatalogs() {
-        if (catalogSpecs.isEmpty()) return;
+        // The rows switched on, plus the hero's own catalogs (config.xml's default rows): the hero's
+        // recommendations don't depend on which rows are shown.
+        Map<String, CatalogSpec> need = new LinkedHashMap<>();
+        for (CatalogSpec c : catalogSpecs) need.put(c.key(), c);
+        if (heroOn) for (String k : defaultCatalogs) if (allCatalogs.containsKey(k)) need.put(k, allCatalogs.get(k));
+        if (need.isEmpty()) return;
         long now = SystemClock.elapsedRealtime();
         if (catalogsLoadedAt != 0 && now - catalogsLoadedAt < CATALOG_TTL_MS) return;
         catalogsLoadedAt = now;
         try {
             io.execute(() -> {
-                List<List<Media>> lists = new ArrayList<>();
+                Map<String, List<Media>> got = new HashMap<>();
                 boolean any = false;
-                for (CatalogSpec c : catalogSpecs) {
+                for (CatalogSpec c : need.values()) {
                     List<Media> l = fetchCatalog(c);
-                    lists.add(l);
+                    got.put(c.key(), l);
                     any |= !l.isEmpty();
                 }
                 boolean ok = any;
                 runOnUiThread(() -> {
                     if (isDestroyed()) return;
                     if (!ok) { catalogsLoadedAt = 0; return; } // offline: keep the photos, retry on return
-                    for (int i = 0; i < lists.size(); i++) showRow(catalogRows.get(i), lists.get(i));
-                    setPicks(lists);
+                    for (int i = 0; i < catalogSpecs.size(); i++) showRow(catalogRows.get(i), got.get(catalogSpecs.get(i).key()));
+                    List<List<Media>> heroLists = new ArrayList<>();
+                    for (String k : defaultCatalogs) if (got.containsKey(k)) heroLists.add(got.get(k));
+                    setPicks(heroLists);
                 });
             });
         } catch (RejectedExecutionException ignored) { }
@@ -1720,8 +1727,8 @@ public class MainActivity extends Activity {
         settingsChanged = false;
         List<TextView> rows = new ArrayList<>();
         rows.add(menuLabel("Home screen"));
-        rows.add(menuToggle("Picks in the hero", prefs.flag("hero", true), on -> prefs.setFlag("hero", on)));
-        rows.add(menuToggle("Your shows in the hero", prefs.flag("hero_shows", true), on -> prefs.setFlag("hero_shows", on)));
+        rows.add(menuToggle("Featured: recommendations", prefs.flag("hero", true), on -> prefs.setFlag("hero", on)));
+        rows.add(menuToggle("Featured: what I'm watching", prefs.flag("hero_shows", true), on -> prefs.setFlag("hero_shows", on)));
         rows.add(menuToggle("Continue watching", prefs.flag("continue", true), on -> prefs.setFlag("continue", on)));
         if (!allCatalogs.isEmpty()) {
             rows.add(menuLabel("Rows"));

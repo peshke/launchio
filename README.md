@@ -49,8 +49,8 @@ Undo everything with `tools/restore.sh <the same list>`.
 | Path | What it is |
 |---|---|
 | [PROMPT.md](PROMPT.md) | The prompt for Claude Code / any coding agent |
-| [launcher/](launcher/) | The home screen. 4.7 MB including the wallpapers; plain Android, no network, no background services |
-| [launcher/res/values/config.xml](launcher/res/values/config.xml) | Dock apps, hidden apps, Live TV app, grid columns |
+| [launcher/](launcher/) | The home screen. 4.7 MB including the wallpapers; plain Android, no background services, network only for catalogs and artwork |
+| [launcher/res/values/config.xml](launcher/res/values/config.xml) | Dock apps, hidden apps, Live TV app, Continue watching apps, catalog add-on and rows, grid columns |
 | [tools/tv.py](tools/tv.py) | Pure-Python ADB client: shell, batch, screenshots, chunked APK push |
 | [tools/find-tv.sh](tools/find-tv.sh) | Finds Android TVs on your Wi-Fi |
 | [tools/type.sh](tools/type.sh) | Type into the TV's on-screen keyboard from your laptop (`tools/type.sh` alone prompts hidden, for passwords) |
@@ -63,6 +63,16 @@ Undo everything with `tools/restore.sh <the same list>`.
   dropdown; the remote's Menu key opens it too), **Wi-Fi** (shows the network name) and **Settings**.
 - A dock of your favourite apps. The focused app's name appears above it over a glow coloured from
   its banner. Press Down for every other app in a grid.
+- A **Continue watching** row under the dock, read from the system Watch Next list that apps like
+  [Nuvio](https://github.com/NuvioMedia/NuvioTV) fill: art, progress bar, season and episode, and
+  Select resumes playback. Limit it to some apps with `continue_watching_apps` in `config.xml`.
+  It needs `READ_TV_LISTINGS`, which `build-and-install.sh` grants; the row hides without it.
+- **Picks** from a Stremio-style catalog add-on ([Cinemeta](https://v3-cinemeta.strem.io) by
+  default, no account or key): the first few take turns as a hero behind the dock (backdrop, title
+  logo, year, genres, rating, blurb, **Open in Nuvio**; Up from the dock, Left/Right to flip), and
+  each catalog gets a sideways row under Continue watching. Focusing any card swaps the background
+  to its backdrop. Picks open through Nuvio's `nuvio://meta` link. Pick the add-on, rows and app in
+  `config.xml`; an empty `catalog_addon` keeps the photos. Offline, the photos come back.
 - 12 nature photos crossfade every 10 minutes, with a scrim so text stays readable. Swap them in
   `launcher/assets/wallpapers/` (1920×1080 JPEGs, credits in `launcher/WALLPAPER-CREDITS.md`).
 - Deterministic D-pad focus, remembers the last tile, picks up newly installed apps on return.

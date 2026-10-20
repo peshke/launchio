@@ -4,13 +4,14 @@
   Package names: tools/venv/bin/python -I tools/tv.py 'pm list packages'
 -->
 <resources>
-    <!-- Dock apps, left to right. Apps that aren't installed are skipped. -->
+    <!-- Dock apps, left to right. Apps that aren't installed are skipped. On the TV, long press a
+         tile to move it, add it to the dock or hide it; Settings › Home screen undoes those. -->
     <string-array name="dock_apps">
-        <item>com.apple.atve.androidtv.appletv</item>
+        <item>com.nuvio.tv</item>
         <item>com.google.android.youtube.tv</item>
-        <item>in.startv.hotstar</item>
-        <item>com.netflix.ninja</item>
-        <item>com.amazon.amazonvideo.livingroom</item>
+        <item>com.wbd.stream</item>
+        <item>org.videolan.vlc</item>
+        <item>com.google.android.youtube.tvmusic</item>
     </string-array>
 
     <!-- Never shown as tiles: system helpers, and the Live TV app (it's in the Inputs menu). -->
@@ -29,6 +30,34 @@
     <!-- The manufacturer's own source picker, used if switching to an input directly fails. -->
     <string name="input_picker_package" translatable="false">com.tcl.suspension</string>
 
-    <!-- Tiles per row in the grid. -->
+    <!-- Apps whose Watch Next entries fill the Continue watching row. Empty to take every app's.
+         Nuvio is com.nuvio.tv (GitHub build) or com.nuvio.app (Play Store build). -->
+    <string-array name="continue_watching_apps">
+    </string-array>
+
+    <!-- Picks: a Stremio-style catalog add-on fills the featured hero behind the dock and the rows
+         under Continue watching. Cinemeta (the default) needs no account or key. Leave it empty to
+         turn picks off and keep the photos. -->
+    <string name="catalog_addon" translatable="false">https://v3-cinemeta.strem.io</string>
+
+    <!-- One row per item: "type/catalog id|Row title". Cinemeta's catalogs: top (Popular),
+         year (New) and imdbRating (Featured), each for movie and series. -->
+    <string-array name="catalog_rows">
+        <item>movie/top|Popular movies</item>
+        <item>series/top|Popular series</item>
+    </string-array>
+
+    <!-- More catalogs offered under Settings › Home screen › Rows, off until switched on there. -->
+    <string-array name="catalog_choices">
+        <item>movie/year|New movies</item>
+        <item>series/year|New series</item>
+        <item>movie/imdbRating|Featured movies</item>
+        <item>series/imdbRating|Featured series</item>
+    </string-array>
+
+    <!-- The app picks open in, through its nuvio://meta link. -->
+    <string name="open_in_package" translatable="false">com.nuvio.tv</string>
+
+    <!-- Tiles per row in the grid; media rows show this many cards at a time. -->
     <integer name="columns">5</integer>
 </resources>

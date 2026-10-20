@@ -1,0 +1,23 @@
+# TCL Smart TV Pro (device G08), Android 12, build STT2.221228.001
+# Apply: tools/disable.sh examples/tcl-google-tv-g08/debloat.txt   Undo: tools/restore.sh <same file>
+# Everything is DISABLED for user 0, never uninstalled.
+# Kept on purpose: Chromecast (mediashell), screen mirroring (miracast), USB media (ui_mediaCenter,
+# gallery) and the ambient screensaver (dreamx).
+# Already disabled on this set before this list, so not listed (restore.sh leaves them alone):
+# com.tcl.guard, com.tcl.partnercustomizer, com.tcl.smartalexa, com.tcl.ocean.instructions,
+# com.google.android.videos, com.google.android.play.games, com.netflix.ninja
+
+# TCL telemetry, accounts and ads
+com.tcl.ttvs                       # TCL core service: BI analytics, Alexa bridge, account sync
+com.tcl.usercenter                 # TCL account / phone binding
+com.tcl.messagebox                 # TCL promo message popups
+com.tcl.esticker                   # on-screen promo stickers
+
+# TCL content tabs and channels
+com.tcl.channelplus                # "TCL Channel" app
+com.tcl.waterfall.overseas         # the "TCL" content tab
+com.tcl.tv.tclhome_passive
+
+# Google extras
+com.google.android.feedback
+android.autoinstalls.config.google.gtvpai   # silently installs promoted apps

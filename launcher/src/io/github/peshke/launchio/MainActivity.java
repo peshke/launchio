@@ -117,6 +117,8 @@ public class MainActivity extends Activity {
     private final List<String> defaultCatalogs = new ArrayList<>();
     private boolean heroOn, heroShows, continueOn; // heroOn: catalog picks take turns in the hero
     private String background, dockAlign; // titles | photos | bing | picsum; left | center | right
+    private Look.Palette look; // Nuvio's theme of your choice (Settings › Home screen › Theme)
+    private String font;
     private String catalogAddon, openInPkg, openInLabel;
     private int cols;
 
@@ -193,6 +195,7 @@ public class MainActivity extends Activity {
     private final Runnable rotateWallpaper = this::nextWallpaper;
     private final Runnable rotateHero = this::nextHero;
     private long heroChangedAt;
+    private boolean artReleased; // artwork dropped while hidden; reloaded on the way back
     private final List<String> bingPhotos = new ArrayList<>(); // io threads only, under its lock
     private long bingPhotosAt;
     private final Runnable refreshContinue = this::loadContinue;
@@ -275,6 +278,8 @@ public class MainActivity extends Activity {
         heroShows = prefs.flag("hero_shows", true);
         continueOn = prefs.flag("continue", true);
         background = prefs.choice("background", "titles");
+        look = Look.theme(prefs.choice("theme", "white"));
+        font = prefs.choice("font", "inter");
         dockAlign = prefs.choice("dock_align", "center");
         if (!catalogAddon.isEmpty()) {
             for (String row : getResources().getStringArray(R.array.catalog_rows)) {
@@ -354,6 +359,7 @@ public class MainActivity extends Activity {
         loadContinue();
         loadCatalogs();
         watchSessions();
+        if (artReleased) restoreArt();
         wakePowerService(false);
         try {
             getContentResolver().registerContentObserver(TvContract.WatchNextPrograms.CONTENT_URI, true, watchNextObserver);
@@ -368,6 +374,44 @@ public class MainActivity extends Activity {
             if (wallChangedAt == 0 || now - wallChangedAt >= WALLPAPER_INTERVAL_MS) nextWallpaper();
             else scheduleWallpaper(WALLPAPER_INTERVAL_MS - (now - wallChangedAt));
         }
+    }
+
+    /**
+     * Covered by another app (someone's watching): let go of the artwork, which is most of
+     * Launchio's memory. The data stays; images reload from the network within a second on Home.
+     * This hangs off onStop, not onTrimMemory: the system stays bound to Launchio's accessibility
+     * and notification services, so its process counts as foreground and never gets UI_HIDDEN.
+     */
+    @Override
+    protected void onStop() {
+        super.onStop();
+        releaseArt();
+    }
+
+    private void releaseArt() {
+        if (artReleased) return;
+        artReleased = true;
+        handler.removeCallbacks(pendingBackdrop);
+        artCache.evictAll();
+        for (MediaRow r : mediaRows) for (View card : r.cards) ((ImageView) ((ViewGroup) card).getChildAt(0)).setImageDrawable(null);
+        featuredLogo.setImageDrawable(null);
+        wallFront.animate().cancel();
+        wallFront.setImageDrawable(null);
+        wallBack.setImageDrawable(null);
+        backdropShown = null;
+        wallChangedAt = 0; // a photo background reloads on return
+        // Bitmap pixels are only freed once their Java objects are collected; do that now, once.
+        Runtime.getRuntime().gc();
+    }
+
+    private void restoreArt() {
+        artReleased = false;
+        int want = getResources().getDisplayMetrics().widthPixels / 3;
+        for (MediaRow r : mediaRows) for (View card : r.cards) {
+            ImageView img = (ImageView) ((ViewGroup) card).getChildAt(0);
+            if (img.getTag() instanceof String) loadArt((String) img.getTag(), img, want, false, null);
+        }
+        if (!featured.isEmpty()) showFeatured(featuredIndex); // its logo and, with title art, the backdrop
     }
 
     @Override
@@ -412,7 +456,7 @@ public class MainActivity extends Activity {
 
     private View buildUi() {
         FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(Color.BLACK);
+        root.setBackgroundColor(look.background);
 
         // Wallpaper: two stacked layers so a new photo can crossfade in over the old one.
         wallBack = wallpaperLayer();
@@ -484,9 +528,11 @@ public class MainActivity extends Activity {
         dockRow.setClipToPadding(false);
         dockRow.setPadding(dp(20), dp(22), dp(20), dp(22));
         GradientDrawable band = new GradientDrawable();
-        band.setCornerRadius(dp(26));
-        band.setColor(0x1FFFFFFF);
-        band.setStroke(dp(1), 0x14FFFFFF);
+        // Nuvio's glass panel, a little lighter so the backdrop shows through.
+        band.setCornerRadius(dp(Look.PANEL_RADIUS));
+        band.setOrientation(GradientDrawable.Orientation.TOP_BOTTOM);
+        band.setColors(Look.GLASS);
+        band.setStroke(dp(1), 0x1AFFFFFF);
         dockRow.setBackground(band);
         // The glass band wraps the docked apps and sits where Settings › Home screen puts it.
         LinearLayout.LayoutParams dockLp = new LinearLayout.LayoutParams(-2, -2);
@@ -496,9 +542,8 @@ public class MainActivity extends Activity {
         continueRow = addMediaRow("Continue watching");
         for (CatalogSpec c : catalogSpecs) catalogRows.add(addMediaRow(c.name));
 
-        appsLabel = text(11, "sans-serif-medium", 0x99FFFFFF);
-        appsLabel.setText("ALL APPS");
-        appsLabel.setLetterSpacing(0.22f);
+        appsLabel = text(16, "sans-serif-semibold", 0xEBFFFFFF);
+        appsLabel.setText("All apps");
         content.addView(appsLabel, llp(-2, -2, dp(68), dp(8), 0, dp(18)));
 
         grid = new LinearLayout(this);
@@ -656,9 +701,8 @@ public class MainActivity extends Activity {
 
     private MediaRow addMediaRow(String name) {
         MediaRow r = new MediaRow();
-        r.label = text(11, "sans-serif-medium", 0x99FFFFFF);
-        r.label.setText(name.toUpperCase(Locale.getDefault()));
-        r.label.setLetterSpacing(0.22f);
+        r.label = text(16, "sans-serif-semibold", 0xEBFFFFFF);
+        r.label.setText(name);
         r.label.setVisibility(View.GONE);
         content.addView(r.label, llp(-2, -2, dp(68), dp(8), 0, dp(4)));
 
@@ -687,16 +731,18 @@ public class MainActivity extends Activity {
         p.setPadding(dp(14), 0, dp(14), 0);
         p.setFocusable(true);
         p.setId(View.generateViewId());
+        int rest = (look.raised & 0x00FFFFFF) | 0xB3000000;
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dp(15));
-        bg.setColor(0x66000000);
-        bg.setStroke(dp(1), 0x33FFFFFF);
+        bg.setCornerRadius(dp(999));
+        bg.setColor(rest);
+        bg.setStroke(dp(1), 0x1AFFFFFF);
         p.setBackground(bg);
         p.setOnFocusChangeListener((v, has) -> {
-            bg.setColor(has ? 0xF2FFFFFF : 0x66000000);
-            ((TextView) v).setTextColor(has ? 0xFF111111 : 0xE6FFFFFF);
-            v.animate().scaleX(has ? 1.08f : 1f).scaleY(has ? 1.08f : 1f)
-                    .setInterpolator(new OvershootInterpolator(2f)).setDuration(220).start();
+            bg.setColor(has ? look.accent : rest);
+            bg.setStroke(dp(1), has ? look.accent : 0x1AFFFFFF);
+            ((TextView) v).setTextColor(has ? look.onAccent : 0xE6FFFFFF);
+            v.animate().scaleX(has ? Look.FOCUS_SCALE : 1f).scaleY(has ? Look.FOCUS_SCALE : 1f)
+                    .setInterpolator(new DecelerateInterpolator()).setDuration(180).start();
             if (has) {
                 lastFocusedId = v.getId();
                 scroll.smoothScrollTo(0, 0);
@@ -824,7 +870,7 @@ public class MainActivity extends Activity {
         card.setTag(app);
         roundCorners(card);
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(app.isBanner ? 0xFF1C1C1E : darken(app.color, 0.45f));
+        bg.setColor(app.isBanner ? look.card : darken(app.color, 0.45f));
         card.setBackground(bg);
 
         ImageView img = new ImageView(this);
@@ -859,7 +905,7 @@ public class MainActivity extends Activity {
         });
         card.setOnLongClickListener(v -> { showAppMenu(v, app, inDock); return true; });
         card.setOnFocusChangeListener((v, has) -> {
-            animateFocus(v, shine, label, has, inDock ? 1.12f : 1.1f);
+            animateFocus(v, shine, label, has, inDock ? Look.DOCK_FOCUS_SCALE : Look.FOCUS_SCALE);
             if (!has) return;
             lastFocusedId = v.getId();
             if (inDock) {
@@ -882,22 +928,16 @@ public class MainActivity extends Activity {
 
     private void animateFocus(View card, View shine, View label, boolean has, float scale) {
         float s = has ? scale : 1f;
-        card.animate().scaleX(s).scaleY(s).translationZ(has ? dp(14) : 0)
-                .setInterpolator(has ? new OvershootInterpolator(1.8f) : new DecelerateInterpolator())
-                .setDuration(has ? 320 : 200).start();
+        card.animate().scaleX(s).scaleY(s).translationZ(has ? dp(10) : 0)
+                .setInterpolator(new DecelerateInterpolator()).setDuration(180).start();
         shine.animate().alpha(has ? 1f : 0f).setDuration(160).start();
         label.animate().alpha(has ? 1f : 0f).translationY(has ? dp(4) : 0).setDuration(200).start();
     }
 
-    /** Focus ring and sheen, drawn above a card's art. */
+    /** The focus ring, drawn above a card's art: the theme's ring colour (or gradient), 2dp. */
     private View shine() {
-        GradientDrawable ring = new GradientDrawable();
-        ring.setCornerRadius(dp(10));
-        ring.setStroke(dp(2), 0xE6FFFFFF);
-        ring.setOrientation(GradientDrawable.Orientation.TL_BR);
-        ring.setColors(new int[]{0x26FFFFFF, 0x00FFFFFF, 0x00FFFFFF});
         View shine = new View(this);
-        shine.setBackground(ring);
+        shine.setBackground(new Look.Ring(look, dp(Look.CARD_RADIUS), dp(Look.RING)));
         shine.setAlpha(0f);
         return shine;
     }
@@ -906,7 +946,7 @@ public class MainActivity extends Activity {
         card.setClipToOutline(true);
         card.setOutlineProvider(new ViewOutlineProvider() {
             @Override public void getOutline(View v, Outline o) {
-                o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), dp(10));
+                o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), dp(Look.CARD_RADIUS));
             }
         });
     }
@@ -1218,7 +1258,14 @@ public class MainActivity extends Activity {
         featuredLogo.setImageDrawable(null);
         String facts = m.resumable ? (TextUtils.isEmpty(m.subtitle) ? "Continue watching"
                 : "Continue watching  ·  " + m.subtitle) : m.subtitle;
-        featuredMeta.setText(facts);
+        SpannableString factsText = new SpannableString(facts == null ? "" : facts);
+        int star = factsText.toString().indexOf('★');
+        if (star >= 0) {
+            int end = factsText.toString().indexOf("  ·", star);
+            factsText.setSpan(new ForegroundColorSpan(Look.RATING), star, end < 0 ? factsText.length() : end,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        featuredMeta.setText(factsText);
         featuredMeta.setVisibility(TextUtils.isEmpty(facts) ? View.GONE : View.VISIBLE);
         featuredButton.setText("▶  " + m.action);
         featuredDesc.setText(m.description == null ? "" : m.description);
@@ -1308,7 +1355,7 @@ public class MainActivity extends Activity {
         card.setFocusable(true);
         card.setClickable(true);
         roundCorners(card);
-        card.setBackgroundColor(0xFF1C1C1E);
+        card.setBackgroundColor(look.card);
 
         ImageView img = new ImageView(this);
         img.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -1329,9 +1376,9 @@ public class MainActivity extends Activity {
 
         if (m.progress >= 0) {
             LinearLayout bar = new LinearLayout(this);
-            bar.setBackgroundColor(0x40FFFFFF);
+            bar.setBackgroundColor(0x33FFFFFF);
             View done = new View(this);
-            done.setBackgroundColor(0xF2FFFFFF);
+            done.setBackgroundColor(look.accent); // progress in the theme's accent, as in Nuvio
             bar.addView(done, new LinearLayout.LayoutParams(0, -1, m.progress));
             bar.addView(new View(this), new LinearLayout.LayoutParams(0, -1, 1f - m.progress));
             card.addView(bar, lp(-1, dp(3), Gravity.BOTTOM, 0, 0, 0, 0));
@@ -1352,7 +1399,7 @@ public class MainActivity extends Activity {
         card.setOnClickListener(v -> m.open.run());
         card.setOnLongClickListener(v -> { showMediaMenu(v, m); return true; });
         card.setOnFocusChangeListener((v, has) -> {
-            animateFocus(v, shine, label, has, 1.1f);
+            animateFocus(v, shine, label, has, Look.FOCUS_SCALE);
             if (!has) return;
             lastFocusedId = v.getId();
             fadeGlow(0.35f);
@@ -1697,6 +1744,12 @@ public class MainActivity extends Activity {
                 rows.add(menuRow("Show " + appLabel(pkg), () -> { prefs.setAppHidden(pkg, false); buildApps(); }));
             }
         }
+        rows.add(menuLabel("Theme (as in Nuvio)"));
+        List<String[]> themes = new ArrayList<>();
+        for (Look.Palette t : Look.THEMES.values()) themes.add(new String[]{Look.key(t.name), t.name});
+        rows.addAll(menuChoices("theme", Look.key(look.name), themes.toArray(new String[0][])));
+        rows.add(menuLabel("Font"));
+        rows.addAll(menuChoices("font", font, Look.FONTS));
         rows.add(menuLabel("Background"));
         rows.addAll(menuChoices("background", background, new String[][]{
                 {"titles", "Title art"}, {"photos", "Built-in photos"},
@@ -1905,14 +1958,14 @@ public class MainActivity extends Activity {
         paint.setShader(null);
         float pad = w * 0.07f;
         paint.setColor(Color.WHITE);
-        paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        paint.setTypeface(Look.font(getAssets(), font, 700));
         paint.setTextSize(h * 0.2f);
         String name = TextUtils.ellipsize(label, new android.text.TextPaint(paint), w - pad * 2, TextUtils.TruncateAt.END).toString();
         c.drawText(name, pad, h - pad, paint);
-        paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        paint.setTypeface(Look.font(getAssets(), font, 600));
         paint.setTextSize(h * 0.085f);
         paint.setLetterSpacing(0.18f);
-        paint.setColor(connected ? 0xFFB9F6CA : 0xB3FFFFFF);
+        paint.setColor(connected ? 0xFF8EE69A : 0xB3FFFFFF); // Nuvio's success green, lifted for the gradient
         c.drawText(connected ? "● CONNECTED" : "INPUT", pad, h - pad - h * 0.24f, paint);
         return new BitmapDrawable(getResources(), bm);
     }
@@ -1984,9 +2037,9 @@ public class MainActivity extends Activity {
         list.setOrientation(LinearLayout.VERTICAL);
         list.setPadding(dp(8), dp(8), dp(8), dp(8));
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dp(16));
-        bg.setColor(0xF02A2A2E);
-        bg.setStroke(dp(1), 0x26FFFFFF);
+        bg.setCornerRadius(dp(Look.MENU_RADIUS));
+        bg.setColor((look.menu & 0x00FFFFFF) | 0xF7000000);
+        bg.setStroke(dp(1), 0x1AFFFFFF);
         list.setBackground(bg);
         ScrollView sv = new ScrollView(this);
         sv.setVerticalScrollBarEnabled(false);
@@ -2085,10 +2138,9 @@ public class MainActivity extends Activity {
     }
 
     private TextView menuLabel(String label) {
-        TextView t = text(9, "sans-serif-medium", 0x80FFFFFF);
-        t.setText(label.toUpperCase(Locale.getDefault()));
-        t.setLetterSpacing(0.2f);
-        t.setPadding(dp(14), dp(10), dp(14), dp(4));
+        TextView t = text(11, "sans-serif-semibold", Look.TEXT_TERTIARY);
+        t.setText(label);
+        t.setPadding(dp(14), dp(12), dp(14), dp(4));
         return t;
     }
 
@@ -2101,12 +2153,12 @@ public class MainActivity extends Activity {
         r.setPadding(dp(14), 0, dp(14), 0);
         r.setFocusable(true);
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dp(10));
+        bg.setCornerRadius(dp(Look.BUTTON_RADIUS));
         bg.setColor(Color.TRANSPARENT);
         r.setBackground(bg);
         r.setOnFocusChangeListener((v, has) -> {
-            bg.setColor(has ? 0xF2FFFFFF : Color.TRANSPARENT);
-            r.setTextColor(has ? 0xFF111111 : Color.WHITE);
+            bg.setColor(has ? look.accent : Color.TRANSPARENT);
+            r.setTextColor(has ? look.onAccent : Color.WHITE);
         });
         return r;
     }
@@ -2374,7 +2426,7 @@ public class MainActivity extends Activity {
     private TextView text(float sp, String family, int color) {
         TextView t = new TextView(this);
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
-        t.setTypeface(Typeface.create(family, Typeface.NORMAL));
+        t.setTypeface(Look.font(getAssets(), font, Look.weight(family)));
         t.setTextColor(color);
         return t;
     }

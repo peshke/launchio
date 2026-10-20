@@ -87,6 +87,12 @@ Undo everything with `tools/restore.sh <the same list>`.
   watching, catalog rows, the background (title art, built-in photos, Bing photo of the day or
   random Picsum photos), and the dock's place (left, centre or right; its glass fits the apps).
   Long press (or Menu) any tile or card for its options.
+- **Nuvio's look**: its 12 themes (Settings › Home screen › Theme; White by default, the Supporter
+  themes with gradient focus rings), Inter or DM Sans (OFL, in `launcher/assets/fonts/`), 16dp cards,
+  pill buttons, accent focus ring and progress. Values follow Nuvio's design tokens; the code is
+  Launchio's own (Nuvio is GPL-3.0, Launchio stays MIT).
+- While another app covers it, Launchio drops its artwork (about a third of its memory) and reloads
+  it when you come back Home.
 - **TV inputs as tiles** (HDMI, AV, …) under the TV's own names ("PlayStation 5" over HDMI 1 when it
   speaks HDMI-CEC), with a "Connected" line. Add them to the dock like apps. Each gets a designed
   banner, or long press to use a built-in photo or a picture on the TV (send one with LocalSend).

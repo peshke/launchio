@@ -44,7 +44,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.provider.MediaStore;
 import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -207,7 +206,6 @@ public class MainActivity extends Activity {
         }
     };
     static final String READ_TV_LISTINGS = "android.permission.READ_TV_LISTINGS";
-    static final String READ_PICTURES = "android.permission.READ_EXTERNAL_STORAGE";
     static final String WRITE_SECURE_SETTINGS = "android.permission.WRITE_SECURE_SETTINGS";
     // An HDMI device turned on or off: refresh the input tiles' "Connected" line.
     private final Runnable rebuildApps = this::buildApps;
@@ -791,7 +789,7 @@ public class MainActivity extends Activity {
             a.inputId = t.getId();
             a.label = inputLabel(t);
             a.isBanner = true;
-            a.color = inputColors(t.getType())[1];
+            a.color = inputColors()[1];
             a.art = inputBanner(t, a.label, tim.getInputState(t.getId()) == TvInputManager.INPUT_STATE_CONNECTED);
             byPkg.put(a.pkg, a);
         }
@@ -1606,7 +1604,6 @@ public class MainActivity extends Activity {
         if (app.inputId != null) {
             rows.add(menuRow("Banner: default", () -> setInputArt(app, "")));
             rows.add(menuRow("Banner: built-in photo…", () -> showPhotoChoices(anchor, app)));
-            rows.add(menuRow("Banner: picture on the TV…", () -> showPictureChoices(anchor, app)));
         } else {
             rows.add(menuRow("App info", () -> launch(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                     Uri.parse("package:" + app.pkg)))));
@@ -1663,10 +1660,10 @@ public class MainActivity extends Activity {
     private void showSettingsMenu(View anchor) {
         List<TextView> rows = new ArrayList<>();
         rows.add(menuRow("TV settings", () -> launch(new Intent(Settings.ACTION_SETTINGS))));
-        rows.add(menuRow("Home screen…", () -> showHomeSettings(anchor)));
+        rows.add(menuRow("Home screen", () -> showHomeSettings(anchor)));
         rows.add(menuLabel("Power"));
-        rows.add(menuRow("Restart…", () -> power(PowerService.GLOBAL_ACTION_POWER_DIALOG)));
-        rows.add(menuRow("Turn off (standby)", () -> power(PowerService.GLOBAL_ACTION_LOCK_SCREEN)));
+        rows.add(menuRow("Restart", () -> power(PowerService.GLOBAL_ACTION_POWER_DIALOG)));
+        rows.add(menuRow("Turn off", () -> power(PowerService.GLOBAL_ACTION_LOCK_SCREEN)));
         showMenu(anchor, rows, dp(220), null);
     }
 
@@ -1864,11 +1861,19 @@ public class MainActivity extends Activity {
         List<TextView> rows = new ArrayList<>();
 
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
-        List<TvInputInfo> inputs = new ArrayList<>();
-        if (tim != null) for (TvInputInfo t : tim.getTvInputList()) {
-            if (t.isPassthroughInput() && !t.isHidden(this)) inputs.add(t);
+        List<TvInputInfo> all = tim == null ? Collections.emptyList() : tim.getTvInputList();
+        // A port with an HDMI-CEC device on it shows once, as the device, in the port's place.
+        Map<String, TvInputInfo> byId = new HashMap<>();
+        Set<String> ports = new HashSet<>();
+        for (TvInputInfo t : all) {
+            byId.put(t.getId(), t);
+            if (t.getParentId() != null) ports.add(t.getParentId());
         }
-        Collections.sort(inputs, (x, y) -> inputLabel(x).compareToIgnoreCase(inputLabel(y)));
+        List<TvInputInfo> inputs = new ArrayList<>();
+        for (TvInputInfo t : all) {
+            if (t.isPassthroughInput() && !t.isHidden(this) && !ports.contains(t.getId())) inputs.add(t);
+        }
+        Collections.sort(inputs, (x, y) -> portLabel(x, byId).compareToIgnoreCase(portLabel(y, byId)));
         for (TvInputInfo t : inputs) {
             rows.add(menuRow(inputLabel(t), () -> openInput(t.getId())));
         }
@@ -1877,6 +1882,12 @@ public class MainActivity extends Activity {
 
         if (rows.isEmpty()) rows.add(menuRow("Settings", () -> launch(new Intent(Settings.ACTION_SETTINGS))));
         showMenu(anchor, rows, dp(200), null);
+    }
+
+    /** The label of the port an input sits on: its own for a port, its parent's for a CEC device. */
+    private String portLabel(TvInputInfo t, Map<String, TvInputInfo> byId) {
+        TvInputInfo port = t.getParentId() != null ? byId.get(t.getParentId()) : null;
+        return inputLabel(port != null ? port : t);
     }
 
     private void openInput(String inputId) {
@@ -1905,37 +1916,20 @@ public class MainActivity extends Activity {
         showMenu(anchor, rows, dp(220), null);
     }
 
-    /** The newest pictures on the TV (LocalSend, USB copies, screenshots), from the media store. */
-    private void showPictureChoices(View anchor, App app) {
-        List<TextView> rows = new ArrayList<>();
-        if (checkSelfPermission(READ_PICTURES) != PackageManager.PERMISSION_GRANTED) {
-            rows.add(menuRow("Allow access to pictures", () -> requestPermissions(new String[]{READ_PICTURES}, 2)));
-        } else {
-            String[] proj = {MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME};
-            try (Cursor c = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null,
-                    MediaStore.Images.Media.DATE_ADDED + " DESC")) {
-                while (c != null && c.moveToNext() && rows.size() < 30) {
-                    Uri uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, String.valueOf(c.getLong(0)));
-                    rows.add(menuRow(c.getString(1), () -> setInputArt(app, uri.toString())));
-                }
-            } catch (RuntimeException ignored) { }
-            if (rows.isEmpty()) rows.add(menuLabel("No pictures yet. Send one with LocalSend, then try again."));
-        }
-        showMenu(anchor, rows, dp(380), null);
+    /** The default banner's gradient, from the theme: its card surface into the accent (or its gradient). */
+    private int[] inputColors() {
+        int[] g = look.ringGradient;
+        return new int[]{blend(look.card, g != null ? g[0] : look.accent, 0.1f),
+                blend(look.card, g != null ? g[g.length - 1] : look.accent, 0.42f)};
     }
 
-    /** Gradient start and end for an input's designed banner, by connector type. */
-    private static int[] inputColors(int type) {
-        switch (type) {
-            case TvInputInfo.TYPE_HDMI: return new int[]{0xFF241A55, 0xFF6C3FD1};
-            case TvInputInfo.TYPE_COMPOSITE: case TvInputInfo.TYPE_SVIDEO: case TvInputInfo.TYPE_SCART:
-                return new int[]{0xFF0B3F3D, 0xFF1C9C8F};
-            case TvInputInfo.TYPE_COMPONENT: return new int[]{0xFF4A2209, 0xFFD9822B};
-            default: return new int[]{0xFF1E2430, 0xFF4B5A70};
-        }
+    private static int blend(int a, int b, float t) {
+        return Color.rgb((int) (Color.red(a) + (Color.red(b) - Color.red(a)) * t),
+                (int) (Color.green(a) + (Color.green(b) - Color.green(a)) * t),
+                (int) (Color.blue(a) + (Color.blue(b) - Color.blue(a)) * t));
     }
 
-    /** An input's tile: your picture (or a designed gradient with the connector), its name, and status. */
+    /** An input's tile: a built-in photo, or the theme-coloured default with the connector; name and status. */
     private Drawable inputBanner(TvInputInfo t, String label, boolean connected) {
         int w = dp(320), h = w * 9 / 16;
         Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
@@ -1949,7 +1943,7 @@ public class MainActivity extends Activity {
             paint.setShader(new LinearGradient(0, h * 0.35f, 0, h, 0x00000000, 0xD9000000, Shader.TileMode.CLAMP));
             c.drawRect(0, 0, w, h, paint);
         } else {
-            int[] col = inputColors(t.getType());
+            int[] col = inputColors();
             paint.setShader(new LinearGradient(0, 0, w, h, col[0], col[1], Shader.TileMode.CLAMP));
             c.drawRect(0, 0, w, h, paint);
             paint.setShader(null);
@@ -1975,7 +1969,7 @@ public class MainActivity extends Activity {
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         p.setStyle(Paint.Style.STROKE);
         p.setStrokeWidth(h * 0.035f);
-        p.setColor(0x38FFFFFF);
+        p.setColor((look.ring & 0x00FFFFFF) | 0x4D000000); // the port, faintly, in the theme's ring colour
         p.setStrokeJoin(Paint.Join.ROUND);
         float cx = w * 0.7f, cy = h * 0.38f, s = h * 0.42f;
         if (type == TvInputInfo.TYPE_HDMI) {
@@ -1999,9 +1993,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** A chosen banner picture: "asset:<path>" (a built-in photo) or a content:// picture. */
+    /** A chosen banner photo: "asset:<path>", one of the built-in photos. */
     private Bitmap inputArt(String art, int want) {
-        if (art.isEmpty()) return null;
+        if (!art.startsWith("asset:")) return null;
         byte[] data;
         if (art.startsWith("asset:")) {
             try (InputStream in = getAssets().open(art.substring(6))) {

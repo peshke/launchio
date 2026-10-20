@@ -94,8 +94,8 @@ Undo everything with `tools/restore.sh <the same list>`.
 - While another app covers it, Launchio drops its artwork (about a third of its memory) and reloads
   it when you come back Home.
 - **TV inputs as tiles** (HDMI, AV, …) under the TV's own names ("PlayStation 5" over HDMI 1 when it
-  speaks HDMI-CEC), with a "Connected" line. Add them to the dock like apps. Each gets a designed
-  banner, or long press to use a built-in photo or a picture on the TV (send one with LocalSend).
+  speaks HDMI-CEC), with a "Connected" line. Add them to the dock like apps. Each gets a default
+  banner in the theme's colours, or long press to use a built-in photo.
   (A picture of what the input last showed isn't possible: HDMI video never reaches apps, and on TCL
   even a small preview window hands the screen to the TV's own player.)
 - App id `io.github.peshke.launchio`. Coming from tv-home's `com.mihir.tvhome`, it installs alongside:

@@ -11,8 +11,6 @@
     <!-- Continue watching row: read other apps' Watch Next entries, and fetch their artwork. -->
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Pictures on the TV (sent with LocalSend, copied from USB) as input banners. -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- Granted over ADB: lets Launchio restart its power service when the TV leaves it stopped. -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
 

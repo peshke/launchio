@@ -37,6 +37,7 @@ printf '%s\n' \
   "pm grant io.github.peshke.launchio android.permission.ACCESS_FINE_LOCATION" \
   "pm grant io.github.peshke.launchio android.permission.READ_TV_LISTINGS" \
   "pm grant io.github.peshke.launchio android.permission.READ_EXTERNAL_STORAGE" \
+  "pm grant io.github.peshke.launchio android.permission.WRITE_SECURE_SETTINGS" \
   "cmd notification allow_listener io.github.peshke.launchio/io.github.peshke.launchio.NowPlayingListener" \
   's=$(settings get secure enabled_accessibility_services); case "$s" in *launchio/.PowerService*) ;; null|"") settings put secure enabled_accessibility_services io.github.peshke.launchio/.PowerService ;; *) settings put secure enabled_accessibility_services "$s:io.github.peshke.launchio/.PowerService" ;; esac' \
   "settings put secure accessibility_enabled 1" \

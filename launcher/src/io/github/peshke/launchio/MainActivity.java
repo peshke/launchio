@@ -205,6 +205,7 @@ public class MainActivity extends Activity {
     };
     static final String READ_TV_LISTINGS = "android.permission.READ_TV_LISTINGS";
     static final String READ_PICTURES = "android.permission.READ_EXTERNAL_STORAGE";
+    static final String WRITE_SECURE_SETTINGS = "android.permission.WRITE_SECURE_SETTINGS";
     // An HDMI device turned on or off: refresh the input tiles' "Connected" line.
     private final Runnable rebuildApps = this::buildApps;
     private final TvInputManager.TvInputCallback inputsChanged = new TvInputManager.TvInputCallback() {
@@ -353,6 +354,7 @@ public class MainActivity extends Activity {
         loadContinue();
         loadCatalogs();
         watchSessions();
+        wakePowerService(false);
         try {
             getContentResolver().registerContentObserver(TvContract.WatchNextPrograms.CONTENT_URI, true, watchNextObserver);
         } catch (RuntimeException ignored) { } // no TV provider
@@ -1621,11 +1623,52 @@ public class MainActivity extends Activity {
         showMenu(anchor, rows, dp(220), null);
     }
 
-    /** Through the accessibility service; without it, send you to switch it on. */
+    /** Through the accessibility service; if it isn't running, wake it, else send you to switch it on. */
     private void power(int action) {
         PowerService service = PowerService.running;
         if (service != null && service.performGlobalAction(action)) return;
+        if (wakePowerService(true)) {
+            handler.postDelayed(() -> {
+                PowerService s = PowerService.running;
+                if (s == null || !s.performGlobalAction(action)) launch(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            }, 2200);
+            return;
+        }
         launch(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+    }
+
+    /**
+     * TCL doesn't always restart accessibility services after an update, or keeps them stopped.
+     * With WRITE_SECURE_SETTINGS (granted over ADB) rewrite the list so ours is bound again: only
+     * when it's switched on, unless {@code add} (you just asked for a power action).
+     */
+    private boolean wakePowerService(boolean add) {
+        if (PowerService.running != null || checkSelfPermission(WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return false;
+        String key = Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES;
+        String shortName = getPackageName() + "/.PowerService", fullName = getPackageName() + "/" + PowerService.class.getName();
+        String list = Settings.Secure.getString(getContentResolver(), key);
+        List<String> others = new ArrayList<>();
+        boolean listed = false;
+        if (list != null) for (String s : list.split(":")) {
+            if (s.equals(shortName) || s.equals(fullName)) listed = true;
+            else if (!s.isEmpty()) others.add(s);
+        }
+        if (!listed && !add) return false;
+        try {
+            // Off, then back on a moment later: two quick writes look like no change and don't rebind.
+            Settings.Secure.putString(getContentResolver(), key, TextUtils.join(":", others));
+            others.add(shortName);
+            String on = TextUtils.join(":", others);
+            handler.postDelayed(() -> {
+                try {
+                    Settings.Secure.putString(getContentResolver(), key, on);
+                    Settings.Secure.putInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+                } catch (SecurityException ignored) { }
+            }, 700);
+            return true;
+        } catch (SecurityException e) {
+            return false;
+        }
     }
 
     /** Hero, rows and hidden apps; the home screen rebuilds when the panel closes. */

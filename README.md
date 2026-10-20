@@ -92,7 +92,9 @@ Undo everything with `tools/restore.sh <the same list>`.
   even a small preview window hands the screen to the TV's own player.)
 - App id `io.github.peshke.launchio`. Coming from tv-home's `com.mihir.tvhome`, it installs alongside:
   run `build-and-install.sh`, then `adb uninstall com.mihir.tvhome`, and re-run the grants if needed. **Settings › Power** restarts the TV or puts
-  it in standby, through a small accessibility service the install script enables.
+  it in standby, through a small accessibility service the install script enables. TCL sometimes
+  leaves that service stopped after an update; Launchio restarts it itself (WRITE_SECURE_SETTINGS,
+  granted at install), but only while it's switched on in Accessibility.
 - 12 nature photos crossfade every 10 minutes, with a scrim so text stays readable. Swap them in
   `launcher/assets/wallpapers/` (1920×1080 JPEGs, credits in `launcher/WALLPAPER-CREDITS.md`).
 - Deterministic D-pad focus, remembers the last tile, picks up newly installed apps on return.

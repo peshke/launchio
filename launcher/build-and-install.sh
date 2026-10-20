@@ -43,7 +43,7 @@ for cmd in \
   "pm grant $APP android.permission.READ_TV_LISTINGS" \
   "pm grant $APP android.permission.WRITE_SECURE_SETTINGS" \
   "cmd notification allow_listener $APP/$APP.NowPlayingListener" \
-  's=$(settings get secure enabled_accessibility_services); case "$s" in *launchio/.PowerService*) ;; null|"") settings put secure enabled_accessibility_services '"$APP"'/.PowerService ;; *) settings put secure enabled_accessibility_services "$s:'"$APP"'/.PowerService" ;; esac' \
+  's=$(settings get secure enabled_accessibility_services); case "$s" in *launchio/.PowerService*|*launchio.PowerService*) ;; null|"") settings put secure enabled_accessibility_services '"$APP"'/.PowerService ;; *) settings put secure enabled_accessibility_services "$s:'"$APP"'/.PowerService" ;; esac' \
   "settings put secure accessibility_enabled 1" \
   "cmd package set-home-activity --user 0 $APP/.MainActivity" \
   "pm disable-user --user 0 $STOCK_LAUNCHER" \

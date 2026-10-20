@@ -1690,8 +1690,10 @@ public class MainActivity extends Activity {
 
     /**
      * TCL doesn't always restart accessibility services after an update, or keeps them stopped.
-     * With WRITE_SECURE_SETTINGS (granted over ADB) rewrite the list so ours is bound again: only
-     * when it's switched on, unless {@code add} (you just asked for a power action).
+     * With WRITE_SECURE_SETTINGS (granted over ADB) switch ours off and back on a moment later, which
+     * makes the system bind it again (rewriting the entry alone doesn't). Only when it's switched on,
+     * unless {@code add} (you just asked for a power action). A note in prefs covers the gap: if
+     * Launchio is stopped between the two writes, the next start finishes switching it back on.
      */
     private boolean wakePowerService(boolean add) {
         if (PowerService.running != null || checkSelfPermission(WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return false;
@@ -1704,22 +1706,32 @@ public class MainActivity extends Activity {
             if (s.equals(shortName) || s.equals(fullName)) listed = true;
             else if (!s.isEmpty()) others.add(s);
         }
-        if (!listed && !add) return false;
+        boolean interrupted = prefs.flag("power_rebinding", false); // we switched it off and didn't finish
+        if (!listed && !add && !interrupted) return false;
+        others.add(shortName);
+        String on = TextUtils.join(":", others);
         try {
-            // Off, then back on a moment later: two quick writes look like no change and don't rebind.
-            Settings.Secure.putString(getContentResolver(), key, TextUtils.join(":", others));
-            others.add(shortName);
-            String on = TextUtils.join(":", others);
-            handler.postDelayed(() -> {
-                try {
-                    Settings.Secure.putString(getContentResolver(), key, on);
-                    Settings.Secure.putInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 1);
-                } catch (SecurityException ignored) { }
-            }, 700);
+            if (listed) {
+                prefs.setFlag("power_rebinding", true);
+                others.remove(others.size() - 1);
+                Settings.Secure.putString(getContentResolver(), key, TextUtils.join(":", others));
+                // Two writes in quick succession look like no change; give the first a moment.
+                handler.postDelayed(() -> switchPowerServiceOn(key, on), 700);
+            } else {
+                switchPowerServiceOn(key, on);
+            }
             return true;
         } catch (SecurityException e) {
             return false;
         }
+    }
+
+    private void switchPowerServiceOn(String key, String list) {
+        try {
+            Settings.Secure.putString(getContentResolver(), key, list);
+            Settings.Secure.putInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+            prefs.setFlag("power_rebinding", false);
+        } catch (SecurityException ignored) { }
     }
 
     /** Hero, rows and hidden apps; the home screen rebuilds when the panel closes. */

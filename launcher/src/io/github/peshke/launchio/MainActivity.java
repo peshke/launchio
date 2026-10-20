@@ -1,4 +1,4 @@
-package com.mihir.tvhome;
+package io.github.peshke.launchio;
 
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
@@ -1555,7 +1555,7 @@ public class MainActivity extends Activity {
             buildApps();
         }));
         if (app.inputId != null) {
-            rows.add(menuRow("Banner: designed", () -> setInputArt(app, "")));
+            rows.add(menuRow("Banner: default", () -> setInputArt(app, "")));
             rows.add(menuRow("Banner: built-in photo…", () -> showPhotoChoices(anchor, app)));
             rows.add(menuRow("Banner: picture on the TV…", () -> showPictureChoices(anchor, app)));
         } else {

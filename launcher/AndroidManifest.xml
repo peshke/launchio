@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mihir.tvhome"
+    package="io.github.peshke.launchio"
     android:versionCode="1"
     android:versionName="1.0">
 
@@ -27,9 +27,9 @@
     </queries>
 
     <application
-        android:label="Home"
-        android:icon="@drawable/ic_home"
-        android:banner="@drawable/ic_home"
+        android:label="Launchio"
+        android:icon="@drawable/launchio_icon"
+        android:banner="@drawable/launchio_banner"
         android:allowBackup="false"
         android:theme="@style/Home">
 
@@ -66,7 +66,7 @@
         <service
             android:name=".NowPlayingListener"
             android:exported="true"
-            android:label="Home: now playing"
+            android:label="Launchio: now playing"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />

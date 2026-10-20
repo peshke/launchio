@@ -1,4 +1,12 @@
-# tv-home
+# Launchio
+
+<img src="branding/launchio-banner-1280.png" width="480" alt="Launchio">
+
+A fork of [tv-home](https://github.com/mihirgupta0900/tv-home) that plays nicely with
+[Nuvio](https://github.com/NuvioMedia/NuvioTV): Continue watching, a hero of your shows and picks,
+TV inputs in the dock, and the rest below. Brand assets and how they're made: [branding/](branding/).
+
+## tv-home
 
 **Make a slow, ad-filled Android TV fast and clean again.** Debloat it over Wi-Fi and give it a
 tiny Apple TV-style home screen with rotating nature wallpapers. You can hand the whole thing to
@@ -79,7 +87,11 @@ Undo everything with `tools/restore.sh <the same list>`.
   Long press (or Menu) any tile or card for its options.
 - **TV inputs as tiles** (HDMI, AV, …) under the TV's own names ("PlayStation 5" over HDMI 1 when it
   speaks HDMI-CEC), with a "Connected" line. Add them to the dock like apps. Each gets a designed
-  banner, or long press to use a built-in photo or a picture on the TV (send one with LocalSend). **Settings › Power** restarts the TV or puts
+  banner, or long press to use a built-in photo or a picture on the TV (send one with LocalSend).
+  (A picture of what the input last showed isn't possible: HDMI video never reaches apps, and on TCL
+  even a small preview window hands the screen to the TV's own player.)
+- App id `io.github.peshke.launchio`. Coming from tv-home's `com.mihir.tvhome`, it installs alongside:
+  run `build-and-install.sh`, then `adb uninstall com.mihir.tvhome`, and re-run the grants if needed. **Settings › Power** restarts the TV or puts
   it in standby, through a small accessibility service the install script enables.
 - 12 nature photos crossfade every 10 minutes, with a scrim so text stays readable. Swap them in
   `launcher/assets/wallpapers/` (1920×1080 JPEGs, credits in `launcher/WALLPAPER-CREDITS.md`).

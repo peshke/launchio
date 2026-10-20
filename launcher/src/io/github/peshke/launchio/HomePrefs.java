@@ -1,4 +1,4 @@
-package com.mihir.tvhome;
+package io.github.peshke.launchio;
 
 import android.content.Context;
 import android.content.SharedPreferences;

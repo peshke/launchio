@@ -34,16 +34,16 @@ PY=../tools/venv/bin/python
 printf '%s\n' \
   "pm install -r /data/local/tmp/tvhome.apk" \
   "rm -f /data/local/tmp/tvhome.apk" \
-  "pm grant com.mihir.tvhome android.permission.ACCESS_FINE_LOCATION" \
-  "pm grant com.mihir.tvhome android.permission.READ_TV_LISTINGS" \
-  "pm grant com.mihir.tvhome android.permission.READ_EXTERNAL_STORAGE" \
-  "cmd notification allow_listener com.mihir.tvhome/com.mihir.tvhome.NowPlayingListener" \
-  's=$(settings get secure enabled_accessibility_services); case "$s" in *tvhome/.PowerService*) ;; null|"") settings put secure enabled_accessibility_services com.mihir.tvhome/.PowerService ;; *) settings put secure enabled_accessibility_services "$s:com.mihir.tvhome/.PowerService" ;; esac' \
+  "pm grant io.github.peshke.launchio android.permission.ACCESS_FINE_LOCATION" \
+  "pm grant io.github.peshke.launchio android.permission.READ_TV_LISTINGS" \
+  "pm grant io.github.peshke.launchio android.permission.READ_EXTERNAL_STORAGE" \
+  "cmd notification allow_listener io.github.peshke.launchio/io.github.peshke.launchio.NowPlayingListener" \
+  's=$(settings get secure enabled_accessibility_services); case "$s" in *launchio/.PowerService*) ;; null|"") settings put secure enabled_accessibility_services io.github.peshke.launchio/.PowerService ;; *) settings put secure enabled_accessibility_services "$s:io.github.peshke.launchio/.PowerService" ;; esac' \
   "settings put secure accessibility_enabled 1" \
-  "cmd package set-home-activity --user 0 com.mihir.tvhome/.MainActivity" \
+  "cmd package set-home-activity --user 0 io.github.peshke.launchio/.MainActivity" \
   "pm disable-user --user 0 $STOCK_LAUNCHER" \
   "pm disable-user --user 0 com.google.android.tungsten.setupwraith" \
-  "cmd package set-home-activity --user 0 com.mihir.tvhome/.MainActivity" \
+  "cmd package set-home-activity --user 0 io.github.peshke.launchio/.MainActivity" \
   "am force-stop com.android.tv.settings" \
   "input keyevent KEYCODE_HOME" \
   | "$PY" -I ../tools/tv.py --batch

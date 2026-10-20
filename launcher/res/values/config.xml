@@ -10,8 +10,6 @@
         <item>com.nuvio.tv</item>
         <item>com.google.android.youtube.tv</item>
         <item>com.wbd.stream</item>
-        <item>org.videolan.vlc</item>
-        <item>com.google.android.youtube.tvmusic</item>
     </string-array>
 
     <!-- Never shown as tiles: system helpers, and the Live TV app (it's in the Inputs menu). -->

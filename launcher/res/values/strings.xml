@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="power_service_label">Home: power</string>
+    <string name="power_service_label">Launchio: power</string>
     <string name="power_service_description">Lets the Home screen\'s Settings menu restart the TV or put it in standby. It doesn\'t read the screen.</string>
 </resources>

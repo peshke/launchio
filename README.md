@@ -4,7 +4,9 @@
 
 A fork of [tv-home](https://github.com/mihirgupta0900/tv-home) that plays nicely with
 [Nuvio](https://github.com/NuvioMedia/NuvioTV): Continue watching, a hero of your shows and picks,
-TV inputs in the dock, and the rest below. Brand assets and how they're made: [branding/](branding/).
+TV inputs in the dock, and the rest below. Branding follows Nuvio's design language (ribbon
+gradient, nested shapes, navy night with a violet glow); [branding/brand.py](branding/brand.py)
+renders it, and [branding/concepts/](branding/concepts/) has the options considered.
 
 ## tv-home
 

@@ -60,18 +60,6 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   session with `tools/tv.py 'logcat -G 16M'` (`logcat -g` shows the size; a reboot brings back the
   firmware's), or keep `logcat` running from before the event. For sound, `dumpsys audio` keeps a
   history of player events that outlasts the log.
-- **Every way of disabling a package is refused**, not just one. On a Fire TV Box 2015 (`sloane`,
-  Fire OS 5 / Android 5.1) `pm disable-user --user 0` returns `SecurityException`,
-  `pm uninstall --user 0` returns `DELETE_FAILED_INTERNAL_ERROR`, and `pm hide` reports success
-  while `pm list packages -d` stays empty ([#577](https://github.com/Gathin23/cleanyourtv/issues/577)).
-  Read `pm list packages -d` after each attempt instead of the exit code - `pm hide` is the one that
-  lies. When all three refuse, this firmware does not take a debloat list at all: there is no shell
-  route around it, sponsored rows stay on the home screen, and the only useful work left is the
-  TV's own privacy toggles plus DNS blocking (Pi-hole with a smart-TV ad list; the report used
-  Perflyst's `AmazonFireTV` list). Fire OS 6 is the opposite case: `pm disable-user` works and about
-  ten Amazon packages are protected, which
-  [`examples/amazon-fire-tv-stick-4k-2018/debloat.txt`](../examples/amazon-fire-tv-stick-4k-2018/debloat.txt)
-  lists, with the same DNS fallback for their endpoints.
 - **The Input key and CEC die after the hidden factory menu is opened**, seen on a Haier/CVTE set
   (Durabrand `DURAT32ISDB`, `dupont`, Android TV 11 build `RTM6.230109.232`,
   [#470](https://github.com/Gathin23/cleanyourtv/issues/470)). `com.cvte.tv.hkcfac` is the
@@ -116,8 +104,7 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   scripts only push the APK they compiled themselves: a build signed with another key does not
   install over this one (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`), so uninstall the old one first if you
   go that way, and keep the stock launcher enabled until the new one really starts. On a set below
-  `minSdk` the debloat and privacy half still applies, from the TV's own home screen: it is the
-  launcher that cannot be installed, not the lists. If the `Failure [...]` line names
+  `minSdk` keep the TV's own home screen: Launchio cannot be installed there. If the `Failure [...]` line names
   `INSTALL_FAILED_VERIFICATION_FAILURE` instead, that is the bullet above - the firmware's installer
   verifier, not the API level.
 - **Screenshots come out empty** while Live TV, an HDMI input or Netflix is on screen, seen on TCL
@@ -148,10 +135,7 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   `Success` while HOME still resolves to the stock launcher (priority 2) until that one is disabled.
   And check which packages actually handle HOME before disabling anything by name: on the Sony
   above, `com.google.android.leanbacklauncher` has a boot receiver but no HOME activity.
-  `tools/disable.sh` now does that check itself: when the list holds the app that owns Home and
-  nothing else on the TV answers HOME, it skips that entry and says so (`FORCE_HOME=1` overrides),
-  so applying a list before the handover no longer leaves the TV without a launcher. Apply the list
-  again after the install script has made the new launcher Home to disable the old one.
+  The install script does that check, and the handover in that order.
 - **China-market Xiaomi rejects a default Home despite `set-home-activity` reporting success**,
   verified on MiTV-AETP0 (dofus), Android 9, firmware 22.9.2.851: the framework filters third-party
   HOME candidates by a package-name allowlist. Disabling the stock launcher then selects
@@ -166,8 +150,8 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   `Success` without changing anything (not even after a reboot), and `pm disable-user` on one of
   setupwraith's components is refused with a SecurityException. Disabling the whole
   `com.google.android.tungsten.setupwraith` package is what frees the slot. It is the first-run
-  setup wizard, so everyday use is unaffected, but re-enable it before a factory reset - list it in
-  your `debloat.txt` and `tools/restore.sh` does that for you. Measured again on a Google TV
+  setup wizard, so everyday use is unaffected, but re-enable it before a factory reset:
+  `pm enable com.google.android.tungsten.setupwraith`. Measured again on a Google TV
   Streamer (`kirkwood`, `UTTK.260317.003`): a launcher built with `android:priority="3"` on its HOME
   filter (`aapt2 dump xmltree` finds it in the installed APK) still has no `mPriority` line in
   `dumpsys package`, and `cmd role get-role-holders android.app.role.HOME` names the new launcher
@@ -182,12 +166,10 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   networks when the app is disabled. The TV is fine but offline, so ADB and the phone remote stop
   working, and a restart doesn't bring the network back. Check before disabling it: `tools/tv.py "dumpsys wifi" | grep -o 'cname=[^ ]*'`.
   If it names setupwraith, forget the network and join it again in Settings > Network & Internet (it
-  then belongs to `android.uid.system`), or use Ethernet. `tools/disable.sh` skips setupwraith while it
-  owns the network (`FORCE_SETUPWRAITH=1` overrides). Already offline? Rejoin from the TV with its own
+  then belongs to `android.uid.system`), or use Ethernet. Already offline? Rejoin from the TV with its own
   remote or a USB keyboard, then turn Wireless debugging back on if it was in use.
 - **Casting from a phone fails with "Untrusted device" after setupwraith is disabled**, seen on
-  Chromecast with Google TV HD (`boreal`) on Google TV 14 build UTTC.250917.004, the build the
-  `examples/google-chromecast-gtv-4k/` list was made on. YouTube on the phone says "Untrusted device.
+  Chromecast with Google TV HD (`boreal`) on Google TV 14 build UTTC.250917.004. YouTube on the phone says "Untrusted device.
   ... couldn't be verified", and logcat repeats `cast_ClientAuthCredsProvisioning: Loading factory
   credentials for 1P device`, `Failed to find provider info for ...CastInfoProvider` and
   `cast_shell: No private key, hence empty signature`. The Cast receiver
@@ -197,7 +179,7 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   `SetupWraith|CastInfoProvider: querying cast infos` and `Created singleton instance of
   ClientAuthSigner`, and casting works. You cannot keep the provider and give up only Home:
   `pm disable-user` on `setupwraith/.RecoveryActivity` is refused with `SecurityException: Shell
-  cannot change component state`. So either debloat without setupwraith and launcherx, or re-enable
+  cannot change component state`. So either keep setupwraith and the stock launcher enabled, or re-enable
   setupwraith after each boot, wait for `ClientAuthSigner`, then disable it again: the receiver keeps
   the credentials in memory, so casting survives until the next reboot - and only in that process.
   `am force-stop com.google.android.apps.mediashell` followed by the receiver coming back prints
@@ -205,8 +187,7 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   that restarts it (a crash, a force-stop, an update) needs the same sequence. Reported on Google's
   own Chromecast hardware (`boreal`) and, with the same log lines, on a Google TV Streamer
   (`kirkwood`, `UTTK.260317.003`), where the `CastInfoProvider` also lives inside the setupwraith
-  APK; the Xiaomi Mi Box S 2nd gen list says casting from a Pixel still works there with
-  setupwraith off.
+  APK; on the Xiaomi Mi Box S 2nd gen casting from a Pixel is reported to work with setupwraith off.
 - **Casting disappears although the Cast receiver is still running**, seen on a TCL 75QM751G (QM7,
   Google TV 14) after its list, and the same "alive is not discoverable" conclusion on a TCL
   BeyondTV2 (Android TV 9, R851T02 V660) in the same thread. Phones and a PC stop seeing the TV,
@@ -254,16 +235,16 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   If the clock then jumps an hour ahead in spring, a fixed offset keeps it right:
   `tools/tv.py 'cmd alarm set-timezone GMT+03:30'`. The same applies to any country whose rules
   changed after the firmware was built.
-- **The network pill says "Wi-Fi" instead of the network name** after `pm clear com.gathin.tvhome`
+- **The network pill says "Wi-Fi" instead of the network name** after `pm clear io.github.peshke.launchio`
   or a reinstall from scratch: clearing the launcher's data also drops the location permission
-  Android 10 needs to read the SSID. `pm grant com.gathin.tvhome android.permission.ACCESS_FINE_LOCATION`
+  Android 10 needs to read the SSID. `pm grant io.github.peshke.launchio android.permission.ACCESS_FINE_LOCATION`
   (the install script does this).
-- **Home is "Select a Home app"** after `tools/restore.sh` followed by re-applying a list: disabling a
-  package that also claims HOME (PatchWall on Xiaomi) makes Android drop the default. The install
+- **Home is "Select a Home app"** after disabling a package that also claims HOME (PatchWall on Xiaomi):
+  Android drops the default then. The install
   script now picks the known stock launcher among the candidates by itself; otherwise choose one on
   the TV or pass `STOCK_LAUNCHER=<package>`.
 - **Stremio fails every stream with `ConnectException: Failed to connect to /127.0.0.1:11470`**,
-  and only Force stop brings it back until the next reboot. This is not the debloat. It is a Stremio
+  and only Force stop brings it back until the next reboot. This is not the launcher. It is a Stremio
   regression in 1.11 ([stremio-bugs#2866](https://github.com/Stremio/stremio-bugs/issues/2866)):
   `startServer()` only runs once the lifecycle is at least STARTED, so a process Android woke in the
   background never starts the local server, and opening the app reuses that process. On a TV the
@@ -276,14 +257,6 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   workaround not working. An app started in the foreground is unaffected, and the side effect, that
   the home-screen channels only refresh while Stremio is open, costs nothing once the recommendation
   rows are disabled anyway.
-- **A firmware update quietly undoes the cleanup.** The update installs over the cleaned-up system, so
-  every listed package is enabled again, Home goes back to the stock launcher and new preloads
-  appear that no list mentions. `tools/venv/bin/python -I tools/check.py <list>` reports the first
-  two and exits 1; `--fix` disables them again and puts the launcher back on Home. New preloads it
-  cannot know about, so after a big update compare `tools/tv.py 'pm list packages'` with the list
-  once by hand. On a TV whose list disables the updater, this only happens when you install an
-  update on purpose: enable the updater, update, `check.py --fix`, disable it again.
-
 ## Accessibility helper enabled but the remote button does nothing
 
 The optional `HomeKeyService` and `InputKeyService` only filter remote keys once Android has bound to
@@ -298,11 +271,11 @@ tools/tv.py 'dumpsys accessibility'
 
 | Helper | Component in the enabled-services list | Key it filters |
 | --- | --- | --- |
-| Home button | `com.gathin.tvhome/.HomeKeyService` | `KEYCODE_ALL_APPS` (not an ordinary `KEYCODE_HOME`) |
-| Input button | `com.gathin.tvhome/.InputKeyService` | `KEYCODE_TV`, `KEYCODE_TV_INPUT`, plus the keycodes in `input_key_keycodes` and `app_keys` (`config.xml` or a theme) |
+| Home button | `io.github.peshke.launchio/.HomeKeyService` | `KEYCODE_ALL_APPS` (not an ordinary `KEYCODE_HOME`) |
+| Input button | `io.github.peshke.launchio/.InputKeyService` | `KEYCODE_TV`, `KEYCODE_TV_INPUT`, plus the keycodes in `input_key_keycodes` and `app_keys` (`config.xml` or a theme) |
 
 - **Enabled** means the component is in that user's colon-separated list (the class may be written in
-  full, `com.gathin.tvhome/com.gathin.tvhome.HomeKeyService`). Match the whole component.
+  full, `io.github.peshke.launchio/io.github.peshke.launchio.HomeKeyService`). Match the whole component.
 - **Bound** means it appears under that user's `Bound services` section of the dump (`services` on older
   builds). Give it a few seconds after enabling and read again. Labels in the dump can be translated or
   shared with other services; a line containing "Home" is not proof.
@@ -320,7 +293,7 @@ tools/tv.py 'dumpsys accessibility'
   (an RC-36 remote sends its gear on scancode 240 and its notifications button on 362 that way; see
   [the FPD CG50-C3 note](devices/fpd-cg50-c3.md)).
 
-A force-stop switches the helpers off for good: after `am force-stop com.gathin.tvhome` (or Force stop in
+A force-stop switches the helpers off for good: after `am force-stop io.github.peshke.launchio` (or Force stop in
 Settings > Apps) Android removes the launcher's services from the enabled list, and they do not come back
 when the launcher starts again (seen on a TCL 55C715, Android TV 9). Enable them again the same way you did
 the first time, and avoid force-stopping the launcher while testing.
@@ -328,13 +301,13 @@ the first time, and avoid force-stopping the launcher while testing.
 Enabled but never bound points at a firmware restriction on auto-starting sideloaded services (some TCL
 builds log `OP_AUTO_START` denials). Look at `logcat` for the binding failure before changing settings,
 and do not rewrite the enabled-services list or grant app-ops as a blanket fix. On a TCL 55S470G (Google
-TV 12) the line is `[TclAppBoot] ... calleeComponent = 'com.gathin.tvhome/.HomeKeyService', bootType =
+TV 12) the line is `[TclAppBoot] ... calleeComponent = 'io.github.peshke.launchio/.HomeKeyService', bootType =
 'bind_service', isAllow = 'false', reason = 'callee_does't_have_OP_AUTO_START_permission.'`, and
-`appops get com.gathin.tvhome` shows `APP_AUTO_START: ignore`. Allowing that one op for the launcher only
-and saving it (`appops set com.gathin.tvhome APP_AUTO_START allow; appops write-settings`) made the service
+`appops get io.github.peshke.launchio` shows `APP_AUTO_START: ignore`. Allowing that one op for the launcher only
+and saving it (`appops set io.github.peshke.launchio APP_AUTO_START allow; appops write-settings`) made the service
 bind on its own after a restart; toggling the service off and on in Accessibility works until the next
 restart. App-ops reach the disk lazily: without `write-settings`, a restart soon after the `set` drops the
 change and the denial is back. Seen on a TCL C89B (Google TV 14, `G08`, `UTT2.250416.001 AU02`), whose log
-reads `[TclAppBoot]:forbid bind service ComponentInfo{com.gathin.tvhome/com.gathin.tvhome.HomeKeyService}`
+reads `[TclAppBoot]:forbid bind service ComponentInfo{io.github.peshke.launchio/io.github.peshke.launchio.HomeKeyService}`
 and whose `appops get` names the op `AUTO_START`: use the name `appops get` prints. When reporting, give the
 model, build, current user and the relevant redacted lines, not the raw dump.

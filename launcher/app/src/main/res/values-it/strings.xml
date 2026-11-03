@@ -21,7 +21,7 @@
     <string name="dream_name">Orologio</string>
     <string name="vpn_off">VPN disattivata</string>
     <string name="home_settings">Scegli la home predefinita</string>
-    <string name="home_settings_help">Seleziona la home originale per smettere di usare CleanYourTV come Home, oppure CleanYourTV per tornare indietro. Il launcher originale deve essere attivo e la TV deve offrire la scelta della home; se era disattivato, usa prima lo script di ripristino.</string>
+    <string name="home_settings_help">Seleziona la home originale per smettere di usare Launchio come Home, oppure Launchio per tornare indietro. Il launcher originale deve essere attivo e la TV deve offrire la scelta della home; se era disattivato, usa prima lo script di ripristino.</string>
     <string name="launcher_settings">Impostazioni del launcher</string>
     <string name="columns_label">App per riga</string>
     <string name="rows_below_dock_label">Righe sotto il dock</string>
@@ -87,11 +87,4 @@
         <item quantity="one">%1$d app</item>
         <item quantity="other">%1$d app</item>
     </plurals>
-    <string name="race_kicker">Gara %1$d · %2$s · %3$s</string>
-    <string name="race_kicker_no_place">Gara %1$d · %2$s</string>
-    <string name="race_next">%1$s tra %2$s</string>
-    <string name="race_lights_out">Via tra %1$s</string>
-    <string name="race_live">%1$s · in diretta</string>
-    <string name="race_finished">Bandiera a scacchi</string>
-    <string name="last_opened">Ultima apertura: %1$s</string>
 </resources>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">בית</string>
+    <string name="app_name">Launchio</string>
     <string name="inputs">כניסות</string>
     <string name="wifi">Wi-Fi</string>
     <string name="settings">הגדרות</string>
@@ -26,7 +26,7 @@
     <string name="vpn">VPN</string>
     <string name="vpn_off">ה־VPN כבוי</string>
     <string name="home_settings">מסך הבית המוגדר כברירת מחדל</string>
-    <string name="home_settings_help">כדי להפסיק להשתמש ב־CleanYourTV כמסך הבית, יש לבחור במסך הבית המקורי. כדי לחזור, יש לבחור ב־CleanYourTV. מפעיל מסך הבית המקורי חייב להיות פעיל, והטלוויזיה צריכה לתמוך בבחירת מסך בית. אם הוא הושבת, יש להפעיל תחילה את סקריפט השחזור.</string>
+    <string name="home_settings_help">כדי להפסיק להשתמש ב־Launchio כמסך הבית, יש לבחור במסך הבית המקורי. כדי לחזור, יש לבחור ב־Launchio. מפעיל מסך הבית המקורי חייב להיות פעיל, והטלוויזיה צריכה לתמוך בבחירת מסך בית. אם הוא הושבת, יש להפעיל תחילה את סקריפט השחזור.</string>
     <string name="launcher_settings">הגדרות מסך הבית</string>
     <string name="columns_label">אפליקציות בשורה</string>
     <string name="animations_state">הנפשות: %1$s</string>
@@ -95,12 +95,4 @@
     <string name="wallpaper_applied">הטפט שונה</string>
     <string name="wallpaper_theme_default">ברירת המחדל של ערכת הנושא</string>
 
-    <!-- Race-weekend panel (RaceWeekend). -->
-    <string name="race_kicker">סבב %1$d · %2$s · %3$s</string>
-    <string name="race_kicker_no_place">סבב %1$d · %2$s</string>
-    <string name="race_next">%1$s בעוד %2$s</string>
-    <string name="race_lights_out">הזינוק בעוד %1$s</string>
-    <string name="race_live">%1$s · בשידור חי</string>
-    <string name="race_finished">הדגל המשובץ</string>
-    <string name="last_opened">נפתח לאחרונה %1$s</string>
 </resources>

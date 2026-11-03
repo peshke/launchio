@@ -7,7 +7,7 @@
 #        TV_HOST=192.168.1.50 tools/theme.sh --reset        # remove the overlay, back to config.xml
 set -euo pipefail
 # Resolve the theme folder against the caller's directory before moving into tools/.
-# Git Bash's pwd says /c/Users/..., which the Windows Python cannot open; pwd -W gives C:/Users/... (as in disable.sh).
+# Git Bash's pwd says /c/Users/..., which the Windows Python cannot open; pwd -W gives C:/Users/....
 THEME_ARG="${1:-}"
 case "$THEME_ARG" in --reset|"") ;; /*) ;; *) THEME_ARG="$(pwd -W 2>/dev/null || pwd)/$THEME_ARG" ;; esac
 cd "$(dirname "$0")"
@@ -16,7 +16,7 @@ PY=venv/bin/python
 [ -x "$PY" ] || PY=venv/Scripts/python.exe
 [ -x "$PY" ] || { echo "run: python3 -m venv tools/venv && tools/venv/bin/pip install -r tools/requirements.txt" >&2; exit 1; }
 export MSYS_NO_PATHCONV=1
-PKG=com.gathin.tvhome
+PKG=io.github.peshke.launchio
 DIR=/sdcard/Android/data/$PKG/files
 # A unique marker lets the launcher clear on-TV layout/motion choices after every theme push,
 # including a push of identical config.json bytes and --reset.

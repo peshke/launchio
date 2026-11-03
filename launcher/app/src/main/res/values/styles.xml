@@ -4,6 +4,22 @@
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:colorBackground">@android:color/black</item>
         <item name="android:windowAnimationStyle">@null</item>
+        <!-- Launchio's look before a palette or font is chosen: the Default theme (the original look) and Inter.
+             Look.apply() lays the chosen Look.Palette.* and Look.Font.* styles over this. -->
+        <item name="launchioAccent">#F5FFFFFF</item>
+        <item name="launchioOnAccent">#FF111111</item>
+        <item name="launchioRing">#CCFFFFFF</item>
+        <item name="launchioFocusBg">#5574A987</item>
+        <item name="launchioBackground">#FF000000</item>
+        <item name="launchioRaised">#FF141416</item>
+        <item name="launchioCard">#FF1C1C1E</item>
+        <item name="launchioMenu">#FF2A2A2E</item>
+        <item name="fontExtraLight">@font/inter_extralight</item>
+        <item name="fontLight">@font/inter_light</item>
+        <item name="fontRegular">@font/inter_regular</item>
+        <item name="fontMedium">@font/inter_medium</item>
+        <item name="fontSemiBold">@font/inter_semibold</item>
+        <item name="android:textViewStyle">@style/Look.Text</item>
     </style>
 
     <!-- Frosted pill, tvOS style. -->
@@ -17,7 +33,7 @@
         <item name="android:background">@drawable/pill_bg</item>
         <item name="android:textColor">@drawable/pill_text</item>
         <item name="android:textSize">15sp</item>
-        <item name="android:fontFamily">@font/outfit_medium</item>
+        <item name="android:fontFamily">?attr/fontMedium</item>
         <item name="android:letterSpacing">0.01</item>
         <item name="android:drawablePadding">9dp</item>
         <item name="android:drawableTint">@drawable/pill_text</item>

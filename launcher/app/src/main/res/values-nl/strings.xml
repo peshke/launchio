@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Home</string>
+    <string name="app_name">Launchio</string>
     <string name="inputs">Ingangen</string>
     <string name="wifi">Wifi</string>
     <string name="settings">Instellingen</string>
@@ -26,7 +26,7 @@
     <string name="vpn">VPN</string>
     <string name="vpn_off">VPN uit</string>
     <string name="home_settings">Standaard startscherm kiezen</string>
-    <string name="home_settings_help">Kies je oorspronkelijke startscherm om CleanYourTV niet meer als Home te gebruiken, of CleanYourTV om terug te schakelen. De oorspronkelijke launcher moet ingeschakeld zijn en je tv moet een keuzescherm voor het startscherm hebben; gebruik eerst het herstelscript als hij uitgeschakeld is.</string>
+    <string name="home_settings_help">Kies je oorspronkelijke startscherm om Launchio niet meer als Home te gebruiken, of Launchio om terug te schakelen. De oorspronkelijke launcher moet ingeschakeld zijn en je tv moet een keuzescherm voor het startscherm hebben; gebruik eerst het herstelscript als hij uitgeschakeld is.</string>
     <string name="launcher_settings">Launcher-instellingen</string>
     <string name="columns_label">Apps per rij</string>
     <string name="rows_below_dock_label">Rijen onder het dock</string>
@@ -94,11 +94,4 @@
     </plurals>
     <string name="greeting_with_name">%1$s, %2$s</string>
 
-    <string name="race_kicker">Ronde %1$d · %2$s · %3$s</string>
-    <string name="race_kicker_no_place">Ronde %1$d · %2$s</string>
-    <string name="race_next">%1$s over %2$s</string>
-    <string name="race_lights_out">Lights out over %1$s</string>
-    <string name="race_live">%1$s · live</string>
-    <string name="race_finished">Geblokte vlag</string>
-    <string name="last_opened">Laatst geopend %1$s</string>
 </resources>

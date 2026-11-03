@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- app_banners names drawables at run time, which resource shrinking cannot see: keep every banner_*. -->
+<!-- Names looked up at run time, which resource shrinking cannot see: app_banners' banner_* drawables. The
+     look's styles and fonts are kept too, since only theme attributes point at most of the fonts. -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/banner_*" />
+    tools:keep="@drawable/banner_*,@style/Look_*,@font/inter*,@font/dm_sans*,@font/outfit*" />

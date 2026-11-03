@@ -3,26 +3,48 @@ plugins {
 }
 
 android {
-    namespace 'com.gathin.tvhome'
+    namespace 'io.github.peshke.launchio'
     compileSdk 34
 
     defaultConfig {
-        // Opt-in identity for firmware with a package-name HOME allowlist; see docs/devices/xiaomi-mitv-aetp0-dofus.md.
-        applicationId providers.gradleProperty('launcherApplicationId').getOrElse('com.gathin.tvhome')
+        // -PlauncherApplicationId=io.github.peshke.launchio.dev installs a test build next to the real one.
+        // Test builds don't offer themselves as a home screen, so installing one never changes what Home opens.
+        def appId = providers.gradleProperty('launcherApplicationId').getOrElse('io.github.peshke.launchio')
+        def testBuild = appId != 'io.github.peshke.launchio'
+        applicationId appId
+        manifestPlaceholders = [
+            homeCategory: testBuild ? 'io.github.peshke.launchio.category.TEST_HOME' : 'android.intent.category.HOME',
+            appLabel: testBuild ? 'Launchio (test)' : '@string/app_name',
+        ]
         minSdk 26
         targetSdk 34
-        versionCode 6
-        versionName '2.5'
+        // Launchio's numbering: versionCode = major * 10000 + minor * 100 + patch.
+        versionCode 200
+        versionName '0.2.0'
     }
 
+    signingConfigs {
+        // Launchio's release key, from ~/.gradle/gradle.properties (never the repo):
+        //   launchioKeystore=/path/to/launchio.keystore  launchioKeystorePassword=…
+        //   launchioKeyAlias=…  launchioKeyPassword=…
+        // Without them, release builds fall back to the debug key.
+        if (providers.gradleProperty('launchioKeystore').isPresent()) {
+            launchio {
+                storeFile file(providers.gradleProperty('launchioKeystore').get())
+                storePassword providers.gradleProperty('launchioKeystorePassword').get()
+                keyAlias providers.gradleProperty('launchioKeyAlias').get()
+                keyPassword providers.gradleProperty('launchioKeyPassword').get()
+            }
+        }
+    }
     buildTypes {
         release {
             // R8 strips and optimises the code (AndroidX included): smaller APK, faster start on a slow TV CPU.
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // Sideloaded over ADB, never published: sign with the debug key so it installs over a debug build.
-            signingConfig signingConfigs.debug
+            // Launchio's key when configured (see signingConfigs), so a release installs over the last one.
+            signingConfig signingConfigs.findByName('launchio') ?: signingConfigs.debug
         }
     }
 
@@ -45,4 +67,6 @@ dependencies {
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
     // Test only (never in the APK): plain JVM tests for the module card validators, src/test.
     testImplementation 'junit:junit:4.13.2'
+    // The real org.json for the JVM tests: android.jar only has stubs that throw.
+    testImplementation 'org.json:json:20231013'
 }

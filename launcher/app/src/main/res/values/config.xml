@@ -9,10 +9,10 @@
 
     <!-- Apps pinned to the dock row at the bottom, in this order. Missing apps are skipped. -->
     <string-array name="dock_apps">
+        <item>com.nuvio.tv</item>
+        <item>com.google.android.youtube.tv</item>
         <item>com.netflix.ninja</item>
         <item>com.amazon.amazonvideo.livingroom</item>
-        <item>com.google.android.youtube.tv</item>
-        <item>in.startv.hotstar</item>
     </string-array>
     <!-- With fewer dock_apps than columns (or a dock app that is not installed), the free dock slots take
          the first grid apps, so the dock never shows a gap. false leaves them empty (#162); a theme can
@@ -97,10 +97,6 @@
     <string-array name="app_keys" translatable="false">
     </string-array>
 
-    <!-- Show the Solar Hijri (Shamsi) date used in Iran and Afghanistan, e.g. "27 Mehr 1405", above the
-         Gregorian date. -->
-    <bool name="shamsi_date">false</bool>
-
     <!-- A name after the greeting: "Mr. Trịnh" shows GOOD MORNING, MR. TRỊNH. Empty: the greeting alone. -->
     <string name="greeting_name" translatable="false"></string>
     <!-- Optional VPN app the network pill opens (hold the pill for Wi-Fi settings), e.g. the package of the
@@ -181,12 +177,6 @@
     <string name="latitude" translatable="false"></string>
     <string name="longitude" translatable="false"></string>
 
-    <!-- Cinematic top shelf: the focused dock app's artwork, softened, fills the top of the screen in its
-         colour; the shelf gets a larger name, a "Last opened" line (from the apps Home opened) and dock position
-         dots, the focus glow takes the app's colour and the dock band turns translucent. false keeps the plain
-         shelf. Can also be set with "cinematic_home": true in a theme's config.json. -->
-    <bool name="cinematic_home">false</bool>
-
     <!-- The glow behind the dock in the focused app's colour (red for YouTube, blue for Prime Video). false keeps
          only background_color or the wallpaper behind everything. Can also be set with "ambient_glow": false in a
          theme's config.json. -->
@@ -196,4 +186,24 @@
          Live TV window does not keep the screen on (CVTE): there the system screensaver would start in the
          middle of a programme. Can also be set with "home_idle_clock_minutes": 10 in a theme's config.json. -->
     <integer name="home_idle_clock_minutes">0</integer>
+
+    <!-- The hero: a Stremio-style catalog add-on for recommendations (Cinemeta needs no account), the catalogs
+         it takes them from, and the app they open in through its nuvio://meta link. -->
+    <string name="catalog_addon" translatable="false">https://v3-cinemeta.strem.io</string>
+    <string-array name="hero_catalogs" translatable="false">
+        <item>movie/top</item>
+        <item>series/top</item>
+    </string-array>
+    <string name="open_in_package" translatable="false">com.nuvio.tv</string>
+    <!-- Rows of the add-on's catalogs under Continue watching, offered in Settings › Rows as "type/catalog id|Row title"
+         (Cinemeta's catalogs: top is popular, year is new, imdbRating is featured), and the ones on until you choose. -->
+    <string-array name="catalog_choices" translatable="false">
+        <item>movie/top|Popular movies</item>
+        <item>series/top|Popular series</item>
+        <item>movie/year|New movies</item>
+        <item>series/year|New series</item>
+        <item>movie/imdbRating|Featured movies</item>
+        <item>series/imdbRating|Featured series</item>
+    </string-array>
+    <string name="catalog_rows_default" translatable="false">movie/top,series/top</string>
 </resources>

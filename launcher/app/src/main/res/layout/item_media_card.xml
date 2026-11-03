@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One title in a row under the dock (Continue watching): a 16:9 picture, a progress bar, the title and a line under it. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="240dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="20dp"
+    android:orientation="vertical"
+    android:clipChildren="false">
+
+    <FrameLayout
+        android:id="@+id/mediaCard"
+        android:layout_width="240dp"
+        android:layout_height="135dp"
+        android:background="@drawable/tile_bg"
+        android:foreground="@drawable/media_card_ring"
+        android:focusable="true"
+        android:clickable="true">
+
+        <ImageView
+            android:id="@+id/mediaArt"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:importantForAccessibility="no" />
+
+        <View
+            android:id="@+id/mediaProgress"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_gravity="bottom|start"
+            android:background="?attr/launchioAccent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/mediaTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="#FFFFFFFF"
+        android:textSize="15sp"
+        android:fontFamily="?attr/fontMedium" />
+
+    <TextView
+        android:id="@+id/mediaLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="#99FFFFFF"
+        android:textSize="13sp" />
+</LinearLayout>

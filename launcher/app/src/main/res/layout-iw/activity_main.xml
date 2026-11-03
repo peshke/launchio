@@ -8,14 +8,13 @@
 
     <!-- Time-of-day backdrop, drawn once a minute (config.xml sky_intensity; 0 keeps it hidden).
          Keep in step with layout/activity_main.xml: every view there must exist here too. -->
-    <com.gathin.tvhome.SkyView
+    <io.github.peshke.launchio.SkyView
         android:id="@+id/sky"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:importantForAccessibility="no" />
 
-    <!-- Cinematic top shelf (cinematic_home): the focused dock app's artwork, a few pixels across and
-         stretched over the screen, which softens it like a blur without the cost of one. Hidden otherwise. -->
+    <!-- The featured title's or the focused card's backdrop, centre-cropped over the whole screen. -->
     <ImageView
         android:id="@+id/heroArt"
         android:layout_width="match_parent"
@@ -32,70 +31,8 @@
         android:layout_height="match_parent"
         android:alpha="0" />
 
-    <!-- Race-weekend panel (a theme's race_calendar, see RaceWeekend), mirrored: under the clock on the right. -->
-    <LinearLayout
-        android:id="@+id/racePanel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|right"
-        android:layout_marginEnd="60dp"
-        android:layout_marginTop="158dp"
-        android:gravity="right"
-        android:orientation="vertical"
-        android:focusable="false"
-        android:importantForAccessibility="no"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/raceKicker"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:textColor="#B3FFFFFF"
-                android:textSize="12sp"
-                android:fontFamily="@font/outfit_medium"
-                android:letterSpacing="0.22"
-                android:textAllCaps="true" />
-
-            <View
-                android:layout_width="3dp"
-                android:layout_height="13dp"
-                android:layout_marginStart="10dp"
-                android:background="@drawable/race_bar" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/raceHeadline"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:singleLine="true"
-            android:textColor="#FFFFFFFF"
-            android:textSize="34sp"
-            android:fontFamily="@font/outfit_light"
-            android:letterSpacing="-0.01"
-            android:includeFontPadding="false" />
-
-        <TextView
-            android:id="@+id/raceSessions"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:singleLine="true"
-            android:textColor="#99FFFFFF"
-            android:textSize="12sp"
-            android:fontFamily="@font/outfit_medium"
-            android:letterSpacing="0.12" />
-    </LinearLayout>
-
-    <!-- Cinematic top shelf: darkens the edge behind the shelf and the lower half, so the text and the
-         dock stay readable over the artwork. -->
+    <!-- Over the backdrop: darkens the top, the text side and the lower half, so the clock, the text and the
+         dock stay readable over a picture. -->
     <View
         android:id="@+id/heroScrim"
         android:layout_width="match_parent"
@@ -114,6 +51,19 @@
         android:orientation="vertical"
         android:alpha="0">
 
+        <!-- Featured titles: the title's logo in place of its name, when it has one (Settings › Title logos). -->
+        <ImageView
+            android:id="@+id/heroLogo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxWidth="420dp"
+            android:maxHeight="64dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitStart"
+            android:layout_gravity="right"
+            android:importantForAccessibility="no"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/heroName"
             android:layout_width="wrap_content"
@@ -122,12 +72,12 @@
             android:gravity="right"
             android:textColor="#FFFFFFFF"
             android:textSize="48sp"
-            android:fontFamily="@font/outfit_light"
+            android:fontFamily="?attr/fontLight"
             android:letterSpacing="-0.02"
             android:includeFontPadding="false"
             android:singleLine="true" />
 
-        <!-- Cinematic shelf only: when the app was last opened, and the dock position dots. -->
+        <!-- Featured titles: year, genres and rating, or "Continue watching" and the episode. -->
         <TextView
             android:id="@+id/heroMeta"
             android:layout_width="wrap_content"
@@ -138,17 +88,30 @@
             android:singleLine="true"
             android:textColor="#B3FFFFFF"
             android:textSize="15sp"
-            android:fontFamily="@font/outfit_light"
+            android:fontFamily="?attr/fontLight"
             android:visibility="gone" />
 
-        <LinearLayout
-            android:id="@+id/heroDots"
-            android:layout_width="wrap_content"
-            android:layout_height="6dp"
+        <!-- Featured titles only: the blurb and the Resume / Open in Nuvio button. -->
+        <TextView
+            android:id="@+id/heroDesc"
+            android:layout_width="640dp"
+            android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:layout_marginEnd="4dp"
+            android:layout_marginTop="10dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textColor="#CCFFFFFF"
+            android:textSize="16sp"
+            android:lineSpacingMultiplier="1.15"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/heroOpen"
+            style="@style/TopButton"
+            android:layout_gravity="right"
+            android:layout_marginStart="0dp"
             android:layout_marginTop="16dp"
-            android:orientation="horizontal"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -186,21 +149,6 @@
                     android:layout_marginBottom="9dp"
                     android:orientation="vertical">
 
-                    <!-- Shamsi date ("27 Mehr 1405"), shown when shamsi_date is on. -->
-                    <TextView
-                        android:id="@+id/shamsiDate"
-                        android:gravity="right"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:singleLine="true"
-                        android:ellipsize="end"
-                        android:textColor="#E6FFFFFF"
-                        android:textSize="17sp"
-                        android:fontFamily="@font/outfit_regular"
-                        android:letterSpacing="0.02"
-                        android:includeFontPadding="false"
-                        android:visibility="gone" />
-
                     <TextClock
                         android:id="@+id/date"
                         android:gravity="right"
@@ -212,7 +160,7 @@
                         android:format24Hour="@string/date_format"
                         android:textColor="#A6FFFFFF"
                         android:textSize="14sp"
-                        android:fontFamily="@font/outfit_regular"
+                        android:fontFamily="?attr/fontRegular"
                         android:letterSpacing="0.14"
                         android:textAllCaps="true" />
                 </LinearLayout>
@@ -239,7 +187,7 @@
                         android:ellipsize="end"
                         android:textColor="#8CFFFFFF"
                         android:textSize="12sp"
-                        android:fontFamily="@font/outfit_medium"
+                        android:fontFamily="?attr/fontMedium"
                         android:letterSpacing="0.22"
                         android:textAllCaps="true" />
 
@@ -256,7 +204,7 @@
                             android:format24Hour="HH:mm"
                             android:textColor="#FFFFFFFF"
                             android:textSize="52sp"
-                            android:fontFamily="@font/outfit_light"
+                            android:fontFamily="?attr/fontLight"
                             android:letterSpacing="-0.04"
                             android:includeFontPadding="false" />
 
@@ -271,7 +219,7 @@
                             android:format24Hour=""
                             android:textColor="#B3FFFFFF"
                             android:textSize="15sp"
-                            android:fontFamily="@font/outfit_medium"
+                            android:fontFamily="?attr/fontMedium"
                             android:letterSpacing="0.08"
                             android:textAllCaps="true" />
                     </LinearLayout>
@@ -293,7 +241,7 @@
                 android:ellipsize="end"
                 android:textColor="#D9FFFFFF"
                 android:textSize="14sp"
-                android:fontFamily="@font/outfit_medium"
+                android:fontFamily="?attr/fontMedium"
                 android:letterSpacing="0.04"
                 android:focusable="false"
                 android:visibility="gone" />
@@ -368,11 +316,23 @@
                 android:overScrollMode="never"
                 android:scrollbars="none"
                 android:descendantFocusability="afterDescendants" />
+            <!-- Rows under the dock (Continue watching, then catalogs; item_media_row.xml): drawn in the gap DockDecoration leaves below the dock row
+                 and moved with the grid's scroll in code, so the tiles keep their positions. -->
+            <io.github.peshke.launchio.RowsPanel
+                android:id="@+id/rowsPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="gone">
+
+            </io.github.peshke.launchio.RowsPanel>
         </FrameLayout>
     </LinearLayout>
 
     <!-- The single floating glass highlight that springs between tiles. -->
-    <com.gathin.tvhome.GlassView
+    <io.github.peshke.launchio.GlassView
         android:id="@+id/glass"
         android:layout_width="10dp"
         android:layout_height="10dp"

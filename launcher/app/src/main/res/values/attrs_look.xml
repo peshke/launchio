@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from Launchio's palettes (Look.java); LookTest checks the two agree. -->
+<resources>
+    <attr name="launchioAccent" format="color" />
+    <attr name="launchioOnAccent" format="color" />
+    <attr name="launchioRing" format="color" />
+    <attr name="launchioFocusBg" format="color" />
+    <attr name="launchioBackground" format="color" />
+    <attr name="launchioRaised" format="color" />
+    <attr name="launchioCard" format="color" />
+    <attr name="launchioMenu" format="color" />
+    <attr name="fontExtraLight" format="reference" />
+    <attr name="fontLight" format="reference" />
+    <attr name="fontRegular" format="reference" />
+    <attr name="fontMedium" format="reference" />
+    <attr name="fontSemiBold" format="reference" />
+</resources>

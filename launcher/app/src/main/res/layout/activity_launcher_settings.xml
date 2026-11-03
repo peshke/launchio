@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FF101419"
+    android:background="?attr/launchioBackground"
     android:fillViewport="true">
 
     <LinearLayout
@@ -20,6 +20,58 @@
             android:text="@string/launcher_settings"
             android:textColor="#FFFFFFFF"
             android:textSize="34sp" />
+
+        <!-- Launchio's look: Nuvio's palettes and fonts. -->
+        <TextView
+            android:id="@+id/themeChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="28dp" />
+
+        <TextView
+            android:id="@+id/fontChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <!-- The hero behind the dock. -->
+        <TextView
+            android:id="@+id/heroPicksChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="28dp" />
+
+        <TextView
+            android:id="@+id/heroWatchingChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/heroLogoChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/showArtChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/continueChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/dockInputsChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/rowsChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/rowPeekChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -60,6 +112,11 @@
             <TextView android:id="@+id/rows2" style="@style/SettingsColumnChoice" android:text="2" />
             <TextView android:id="@+id/rows3" style="@style/SettingsColumnChoice" android:text="3" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/photosChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="28dp" />
 
         <TextView
             android:id="@+id/wallpaperChoice"

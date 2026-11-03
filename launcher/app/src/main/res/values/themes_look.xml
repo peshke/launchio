@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from Launchio's palettes (Look.java); LookTest checks the two agree. -->
+<resources>
+    <!-- Every palette: Nuvio's accent (its "secondary"), text on it, focus ring, focused-surface tint, then the
+         background, raised surfaces (dock band, rows), cards and menus. -->
+    <style name="Look.Palette.Default" parent="">
+        <item name="launchioAccent">#F5FFFFFF</item>
+        <item name="launchioOnAccent">#FF111111</item>
+        <item name="launchioRing">#CCFFFFFF</item>
+        <item name="launchioFocusBg">#5574A987</item>
+        <item name="launchioBackground">#FF000000</item>
+        <item name="launchioRaised">#FF141416</item>
+        <item name="launchioCard">#FF1C1C1E</item>
+        <item name="launchioMenu">#FF2A2A2E</item>
+    </style>
+    <style name="Look.Palette.White" parent="">
+        <item name="launchioAccent">#FFF5F5F5</item>
+        <item name="launchioOnAccent">#FF111111</item>
+        <item name="launchioRing">#FFFFFFFF</item>
+        <item name="launchioFocusBg">#FF303030</item>
+        <item name="launchioBackground">#FF0D0D0D</item>
+        <item name="launchioRaised">#FF1A1A1A</item>
+        <item name="launchioCard">#FF222222</item>
+        <item name="launchioMenu">#FF1E1E1E</item>
+    </style>
+    <style name="Look.Palette.Crimson" parent="">
+        <item name="launchioAccent">#FFE53935</item>
+        <item name="launchioOnAccent">#FFFFFFFF</item>
+        <item name="launchioRing">#FFFF5252</item>
+        <item name="launchioFocusBg">#FF3D1A1A</item>
+        <item name="launchioBackground">#FF0D0D0D</item>
+        <item name="launchioRaised">#FF1A1A1A</item>
+        <item name="launchioCard">#FF241A1A</item>
+        <item name="launchioMenu">#FF1E1E1E</item>
+    </style>
+    <style name="Look.Palette.Ocean" parent="">
+        <item name="launchioAccent">#FF1E88E5</item>
+        <item name="launchioOnAccent">#FFFFFFFF</item>
+        <item name="launchioRing">#FF42A5F5</item>
+        <item name="launchioFocusBg">#FF1A2D3D</item>
+        <item name="launchioBackground">#FF0D0D0F</item>
+        <item name="launchioRaised">#FF1A1A1E</item>
+        <item name="launchioCard">#FF1A1F24</item>
+        <item name="launchioMenu">#FF1E1E1E</item>
+    </style>
+    <style name="Look.Palette.Violet" parent="">
+        <item name="launchioAccent">#FF8E24AA</item>
+        <item name="launchioOnAccent">#FFFFFFFF</item>
+        <item name="launchioRing">#FFAB47BC</item>
+        <item name="launchioFocusBg">#FF2D1A3D</item>
+        <item name="launchioBackground">#FF0D0D0F</item>
+        <item name="launchioRaised">#FF1A1A1E</item>
+        <item name="launchioCard">#FF1F1A24</item>
+        <item name="launchioMenu">#FF1E1E1E</item>
+    </style>
+    <style name="Look.Palette.Emerald" parent="">
+        <item name="launchioAccent">#FF43A047</item>
+        <item name="launchioOnAccent">#FFFFFFFF</item>
+        <item name="launchioRing">#FF66BB6A</item>
+        <item name="launchioFocusBg">#FF1A3D1E</item>
+        <item name="launchioBackground">#FF0D0D0D</item>
+        <item name="launchioRaised">#FF1A1A1A</item>
+        <item name="launchioCard">#FF1A241A</item>
+        <item name="launchioMenu">#FF1E1E1E</item>
+    </style>
+    <style name="Look.Palette.Amber" parent="">
+        <item name="launchioAccent">#FFFB8C00</item>
+        <item name="launchioOnAccent">#FFFFFFFF</item>
+        <item name="launchioRing">#FFFFA726</item>
+        <item name="launchioFocusBg">#FF3D2D1A</item>
+        <item name="launchioBackground">#FF0F0D0D</item>
+        <item name="launchioRaised">#FF1E1A1A</item>
+        <item name="launchioCard">#FF24201A</item>
+        <item name="launchioMenu">#FF1E1E1E</item>
+    </style>
+    <style name="Look.Palette.Rose" parent="">
+        <item name="launchioAccent">#FFD81B60</item>
+        <item name="launchioOnAccent">#FFFFFFFF</item>
+        <item name="launchioRing">#FFEC407A</item>
+        <item name="launchioFocusBg">#FF3D1A2D</item>
+        <item name="launchioBackground">#FF0D0D0D</item>
+        <item name="launchioRaised">#FF1A1A1A</item>
+        <item name="launchioCard">#FF241A1F</item>
+        <item name="launchioMenu">#FF1E1E1E</item>
+    </style>
+    <style name="Look.Palette.Gold" parent="">
+        <item name="launchioAccent">#FFE8A91C</item>
+        <item name="launchioOnAccent">#FF111111</item>
+        <item name="launchioRing">#FFFFD45C</item>
+        <item name="launchioFocusBg">#FF3D2D1A</item>
+        <item name="launchioBackground">#FF0F0E0B</item>
+        <item name="launchioRaised">#FF1D1A14</item>
+        <item name="launchioCard">#FF262116</item>
+        <item name="launchioMenu">#FF211D16</item>
+    </style>
+    <style name="Look.Palette.Jade" parent="">
+        <item name="launchioAccent">#FF22D37C</item>
+        <item name="launchioOnAccent">#FF111111</item>
+        <item name="launchioRing">#FF7BF08D</item>
+        <item name="launchioFocusBg">#FF153A2C</item>
+        <item name="launchioBackground">#FF0B0F0D</item>
+        <item name="launchioRaised">#FF141D18</item>
+        <item name="launchioCard">#FF16251D</item>
+        <item name="launchioMenu">#FF17221C</item>
+    </style>
+    <style name="Look.Palette.RoseGold" parent="">
+        <item name="launchioAccent">#FFEC70A9</item>
+        <item name="launchioOnAccent">#FF111111</item>
+        <item name="launchioRing">#FFFFB37A</item>
+        <item name="launchioFocusBg">#FF442037</item>
+        <item name="launchioBackground">#FF100C0F</item>
+        <item name="launchioRaised">#FF1F161D</item>
+        <item name="launchioCard">#FF281A24</item>
+        <item name="launchioMenu">#FF241921</item>
+    </style>
+    <style name="Look.Palette.ArcticBlue" parent="">
+        <item name="launchioAccent">#FF3185F5</item>
+        <item name="launchioOnAccent">#FFFFFFFF</item>
+        <item name="launchioRing">#FF4DE3FF</item>
+        <item name="launchioFocusBg">#FF172844</item>
+        <item name="launchioBackground">#FF0B0E14</item>
+        <item name="launchioRaised">#FF141A24</item>
+        <item name="launchioCard">#FF161E2A</item>
+        <item name="launchioMenu">#FF171F2C</item>
+    </style>
+    <style name="Look.Palette.Graphite" parent="">
+        <item name="launchioAccent">#FFAAB2BE</item>
+        <item name="launchioOnAccent">#FF111111</item>
+        <item name="launchioRing">#FFF3F5F7</item>
+        <item name="launchioFocusBg">#FF30343A</item>
+        <item name="launchioBackground">#FF0C0D0F</item>
+        <item name="launchioRaised">#FF17191D</item>
+        <item name="launchioCard">#FF20242A</item>
+        <item name="launchioMenu">#FF1C1F23</item>
+    </style>
+    <style name="Look.Font.Inter" parent="">
+        <item name="fontExtraLight">@font/inter_extralight</item>
+        <item name="fontLight">@font/inter_light</item>
+        <item name="fontRegular">@font/inter_regular</item>
+        <item name="fontMedium">@font/inter_medium</item>
+        <item name="fontSemiBold">@font/inter_semibold</item>
+        <item name="android:textViewStyle">@style/Look.Text</item>
+    </style>
+    <style name="Look.Font.DmSans" parent="">
+        <item name="fontExtraLight">@font/dm_sans_extralight</item>
+        <item name="fontLight">@font/dm_sans_light</item>
+        <item name="fontRegular">@font/dm_sans_regular</item>
+        <item name="fontMedium">@font/dm_sans_medium</item>
+        <item name="fontSemiBold">@font/dm_sans_semibold</item>
+        <item name="android:textViewStyle">@style/Look.Text</item>
+    </style>
+    <style name="Look.Font.Outfit" parent="">
+        <item name="fontExtraLight">@font/outfit_extralight</item>
+        <item name="fontLight">@font/outfit_light</item>
+        <item name="fontRegular">@font/outfit_regular</item>
+        <item name="fontMedium">@font/outfit_medium</item>
+        <item name="fontSemiBold">@font/outfit_semibold</item>
+        <item name="android:textViewStyle">@style/Look.Text</item>
+    </style>
+    <!-- Text that names no font of its own (Settings, menus built in code) takes the chosen font. -->
+    <style name="Look.Text" parent="android:Widget.TextView">
+        <item name="android:fontFamily">?attr/fontRegular</item>
+    </style>
+</resources>

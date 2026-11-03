@@ -23,7 +23,7 @@ The simplest setup when the TV can run it:
 
 - **Android TV and Google TV:** Tailscale from the Play Store.
 - **Fire TV:** Tailscale from the Amazon Appstore, on most devices from 2018 on. Not on the Fire TV
-  Stick 4K Select, which runs Vega OS (and that one can't be debloated over ADB anyway).
+  Stick 4K Select, which runs Vega OS.
 
 Opening the app shows a QR code. Then either:
 

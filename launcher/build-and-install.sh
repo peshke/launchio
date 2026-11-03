@@ -15,8 +15,7 @@ TV_SDK=$("$PY" -I "$TOOLS/tv.py" 'getprop ro.build.version.sdk' 2>/dev/null | tr
 if [ -n "$MIN_SDK" ] && [ -n "$TV_SDK" ] && [ "$TV_SDK" -lt "$MIN_SDK" ]; then
   echo "ERROR: this TV runs SDK $TV_SDK and the launcher is built with minSdk $MIN_SDK (app/build.gradle)," >&2
   echo "so pm install would answer INSTALL_FAILED_OLDER_SDK. Nothing was built, pushed or disabled." >&2
-  echo "The debloat half of the repo still applies to that set, from its own home screen; the launcher" >&2
-  echo "half would need your own build with a lower minSdk (docs/TROUBLESHOOTING.md)." >&2
+  echo "Keep the TV's own home screen there, or make your own build with a lower minSdk (docs/TROUBLESHOOTING.md)." >&2
   exit 1
 fi
 # macOS: java_home or Homebrew; Linux: the java on PATH.
@@ -56,11 +55,11 @@ if [ -z "${STOCK_LAUNCHER:-}" ]; then
   case " $KNOWN_STOCK_LAUNCHERS " in
     *" $HOME_PKG "*) STOCK_LAUNCHER=$HOME_PKG ;;
     *)
-      if [ "$HOME_PKG" = com.gathin.tvhome ]; then
+      if [ "$HOME_PKG" = io.github.peshke.launchio ]; then
         STOCK_LAUNCHER=none; echo "Home already belongs to this launcher; nothing will be disabled."
       elif [ "$HOME_PKG" = android ]; then
         # Android's chooser: two or more launchers tie and no default is set, which is where a TV lands
-        # after tools/restore.sh followed by a re-applied list. Take the one known stock launcher among
+        # after another package that claims HOME was disabled. Take the one known stock launcher among
         # the HOME claimants, if there is exactly one.
         CLAIMANTS=$("$PY" -I ../tools/tv.py 'cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME' \
           | tr -d '\r' | grep -o '[A-Za-z0-9_.]*/' | tr -d / | sort -u)
@@ -107,7 +106,7 @@ esac
 # fails only prints an "Error:" line, and the stock launcher would be disabled anyway, leaving the TV
 # with no usable Home (#239). "Status: ok" from `am start -W` means the activity really came up;
 # the HOME resolution further down only names a component, it does not prove the activity starts.
-START_OUT=$("$PY" -I ../tools/tv.py 'am start -W -n com.gathin.tvhome/.MainActivity')
+START_OUT=$("$PY" -I ../tools/tv.py 'am start -W -n io.github.peshke.launchio/.MainActivity')
 echo "$START_OUT"
 # Both halves matter: some builds answer "Status: ok" for a task that was merely brought to the
 # front, and an activity that cannot start still prints "Error: Activity not started".
@@ -116,10 +115,11 @@ if ! printf '%s' "$START_OUT" | grep -qF 'Status: ok' || printf '%s' "$START_OUT
   exit 1
 fi
 printf '%s\n' \
-  "pm grant com.gathin.tvhome android.permission.ACCESS_FINE_LOCATION 2>/dev/null; echo location-granted" \
-  "cmd package compile -m speed -f com.gathin.tvhome" \
+  "pm grant io.github.peshke.launchio android.permission.ACCESS_FINE_LOCATION 2>/dev/null; echo location-granted" \
+  "pm grant io.github.peshke.launchio android.permission.READ_TV_LISTINGS 2>/dev/null; echo listings-granted" \
+  "cmd package compile -m speed -f io.github.peshke.launchio" \
   "$DISABLE_STOCK" \
-  "cmd package set-home-activity --user 0 com.gathin.tvhome/.MainActivity" \
+  "cmd package set-home-activity --user 0 io.github.peshke.launchio/.MainActivity" \
   | "$PY" -I ../tools/tv.py --batch
 
 # Home's owner, or an empty string when the TV cannot be reached (pipefail would otherwise make a
@@ -159,11 +159,11 @@ rollback_home() {
 # Order matters: the new launcher is started before the stock one is disabled, and the home
 # preference is set after. Android drops the preference whenever the set of HOME apps changes, and
 # on Google TV 14 the next candidate is the setup wizard's RecoveryActivity, which crash-loops
-# system_server (see examples/xiaomi-tv-a-pro-2026). So check where Home ended up, and put the
+# system_server. So check where Home ended up, and put the
 # stock launcher back if it is not ours.
 HOME_NOW=$(query_home)
 case "$HOME_NOW" in
-  com.gathin.tvhome/*) echo "Home now resolves to $HOME_NOW" ;;
+  io.github.peshke.launchio/*) echo "Home now resolves to $HOME_NOW" ;;
   *)
     if [ -z "$HOME_NOW" ]; then
       echo "ERROR: the TV stopped answering while Home was being switched, so the outcome is unknown." >&2
@@ -172,8 +172,8 @@ case "$HOME_NOW" in
     fi
     rollback_home || true
     if [ -n "$HOME_NOW" ]; then
-      echo "On Google TV this usually means com.google.android.tungsten.setupwraith also claims Home: add it to" >&2
-      echo "your debloat list (see README, Troubleshooting), apply the list, then run this script again." >&2
+      echo "On Google TV this usually means com.google.android.tungsten.setupwraith also claims Home: disable it" >&2
+      echo "(pm disable-user --user 0 com.google.android.tungsten.setupwraith; see docs/TROUBLESHOOTING.md), then run this script again." >&2
     fi
     exit 1 ;;
 esac
@@ -186,7 +186,7 @@ esac
 #   HOME_KEY_SERVICE=1    remotes whose Home button sends KEYCODE_ALL_APPS instead of HOME, e.g. Xiaomi
 #                         sticks: the key is routed to the launcher (HomeKeyService)
 enable_service() {   # appends to enabled_accessibility_services without dropping other services
-  svc=com.gathin.tvhome/.$1
+  svc=io.github.peshke.launchio/.$1
   "$PY" -I ../tools/tv.py "s=\$(settings get secure enabled_accessibility_services); case \"\$s\" in *$1*) ;; null|'') settings put secure enabled_accessibility_services $svc ;; *) settings put secure enabled_accessibility_services \"\$s:$svc\" ;; esac; settings put secure accessibility_enabled 1; echo $1 enabled"
 }
 if [ "${INPUT_KEY_SERVICE:-0}" = 1 ]; then enable_service InputKeyService; fi

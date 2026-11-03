@@ -21,11 +21,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 STOCK_HOME = "com.google.android.tvlauncher/.MainActivity"
-NEW_HOME = "com.gathin.tvhome/.MainActivity"
-TROUBLE = ROOT / "docs" / "TROUBLESHOOTING.md"
-README = ROOT / "README.md"
-EXAMPLES = ROOT / "examples" / "README.md"
-PROMPT = ROOT / "PROMPT.md"
+NEW_HOME = "io.github.peshke.launchio/.MainActivity"
 
 # Stands in for tools/tv.py: answers the SDK level, the Home query and pm install, and keeps the
 # commands the script sent so a test can prove nothing reached the TV.
@@ -186,51 +182,6 @@ class MinSdkGuardTest(unittest.TestCase):
         self.assertIn("minSdk 26", result.stderr)
         self.assertIn("stock launcher was left untouched", result.stderr)
         self.assertFalse(any("pm disable-user" in c for c in state["commands"]))
-
-
-class Android7DocsTest(unittest.TestCase):
-    """The text #576 asked for: what an older set can and cannot do with this repo."""
-
-    def setUp(self):
-        self.trouble = re.sub(r"\s+", " ", TROUBLE.read_text(encoding="utf-8"))
-        self.readme = re.sub(r"\s+", " ", README.read_text(encoding="utf-8"))
-        self.prompt = re.sub(r"\s+", " ", PROMPT.read_text(encoding="utf-8"))
-
-    def test_troubleshooting_has_the_older_sdk_bullet(self):
-        self.assertIn("INSTALL_FAILED_OLDER_SDK", self.trouble)
-        start = self.trouble.index("INSTALL_FAILED_OLDER_SDK")
-        bullet = self.trouble[max(0, start - 200):start + 2200]
-        self.assertIn("getprop ro.build.version.sdk", bullet)
-        self.assertIn("launcher/app/build.gradle", bullet)
-        self.assertIn("#576", bullet)
-        # The half that still works has to be named, and so does the one that does not.
-        self.assertIn("debloat", bullet.lower())
-        self.assertIn("minSdk", bullet)
-
-    def test_troubleshooting_sends_a_rebuilt_apk_elsewhere(self):
-        start = self.trouble.index("INSTALL_FAILED_OLDER_SDK")
-        bullet = self.trouble[max(0, start - 200):start + 2600]
-        self.assertIn("INSTALL_FAILED_VERIFICATION_FAILURE", bullet,
-                      "the firmware-verifier case is the other reason an install fails")
-        self.assertIn("build-and-install.sh", bullet)
-
-    def test_readme_states_the_launcher_requirement_with_a_pointer(self):
-        start = self.readme.index("## The launcher")
-        section = self.readme[start:start + 1600]
-        self.assertIn("API 26", section)
-        self.assertIn("launcher/app/build.gradle", section)
-        self.assertIn("docs/TROUBLESHOOTING.md", section)
-
-    def test_prompt_tells_an_assistant_not_to_promise_it(self):
-        self.assertIn("minSdk", self.prompt)
-        self.assertIn("ro.build.version.sdk", self.prompt)
-
-    def test_the_stale_min_sdk_24_row_is_gone(self):
-        rows = [line for line in EXAMPLES.read_text(encoding="utf-8").split("\n")
-                if line.startswith("| `sony-kd-55x8509c/`")]
-        self.assertEqual(len(rows), 1)
-        self.assertNotIn("minSdk 24", rows[0])
-        self.assertIn("minSdk 26", rows[0])
 
 
 if __name__ == "__main__":

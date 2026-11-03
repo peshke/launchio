@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Início</string>
+    <string name="app_name">Launchio</string>
     <string name="inputs">Entradas</string>
     <string name="wifi">Wi-Fi</string>
     <string name="settings">Configurações</string>
@@ -73,7 +73,7 @@
     </plurals>
     <string name="greeting_with_name">%1$s, %2$s</string>
 
-    <!-- Launcher settings, quick settings panel, race-weekend panel and cinematic shelf. -->
+    <!-- Launcher settings and quick settings panel. -->
     <string name="launcher_settings">Configurações do launcher</string>
     <string name="columns_label">Apps por fileira</string>
     <string name="rows_below_dock_label">Fileiras abaixo do dock</string>
@@ -96,11 +96,4 @@
     <string name="on">Ativado</string>
     <string name="off">Desativado</string>
     <string name="enable">Ativar</string>
-    <string name="race_kicker">Etapa %1$d · %2$s · %3$s</string>
-    <string name="race_kicker_no_place">Etapa %1$d · %2$s</string>
-    <string name="race_next">%1$s em %2$s</string>
-    <string name="race_lights_out">Largada em %1$s</string>
-    <string name="race_live">%1$s · ao vivo</string>
-    <string name="race_finished">Bandeira quadriculada</string>
-    <string name="last_opened">Aberto %1$s</string>
 </resources>

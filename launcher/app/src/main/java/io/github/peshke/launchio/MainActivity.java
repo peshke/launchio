@@ -2269,8 +2269,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
     private void showRow(int index, List<Featured.Item> list) {
         if (dockDecoration == null) return;   // a plain grid (dock_row false) has no gap to put rows in
         MediaRow row = rows.get(index);
-        if (list.isEmpty() && row.view.hasFocus()) focusTile(dockSlot());
+        boolean hadFocus = row.view.hasFocus();
+        if (list.isEmpty() && hadFocus) focusTile(dockSlot());
         row.cards.setItems(list);
+        if (hadFocus && !list.isEmpty()) {
+            // The new cards replace the focused one: keep focus at the same place in the row.
+            row.last = Math.min(row.last, list.size() - 1);
+            row.list.post(() -> focusRow(index));
+        }
         row.view.setVisibility(list.isEmpty() ? View.GONE : View.VISIBLE);
         boolean any = false;
         for (MediaRow r : rows) any |= r.view.getVisibility() == View.VISIBLE;
@@ -3961,6 +3967,25 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
         // Some firmware has no App info page at all; a row that only toasts "can't open" helps nobody.
         Intent info = SystemSettings.appInfo(this, pkg);
         if (info != null) addSettingsMenuRow(rows, popup, R.string.library_app_info, () -> open(info));
+        showMenu(popup, panel, card);
+    }
+
+    @Override
+    public void onCardLongPress(Featured.Item item, View card) {
+        if (!item.resume || openPopup != null) return;   // only Continue watching has a menu
+        View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
+        LinearLayout rows = panel.findViewById(R.id.rows);
+        PopupWindow popup = glassPopup(panel, (int) (200 * density));
+        addSettingsMenuRow(rows, popup, R.string.remove_from_continue, () -> {
+            Featured.hide(this, item);
+            loadFeatured();
+        });
+        showMenu(popup, panel, card);
+    }
+
+    /** Opens a menu of rows under the view it is for, or above it when it would not fit below. */
+    private void showMenu(PopupWindow popup, View panel, View card) {
+        LinearLayout rows = panel.findViewById(R.id.rows);
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (200 * density), panel.getMeasuredWidth()));
         // Dock tiles sit near the bottom of the screen: open the menu above the tile when it would not fit below.

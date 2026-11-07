@@ -25,6 +25,9 @@ final class MediaCards extends RecyclerView.Adapter<MediaCards.Holder> {
 
         void onCardClick(Featured.Item item);
 
+        /** Hold OK on a card. */
+        void onCardLongPress(Featured.Item item, View card);
+
         void loadArt(String url, ImageView into);
     }
 
@@ -68,6 +71,10 @@ final class MediaCards extends RecyclerView.Adapter<MediaCards.Holder> {
         h.progress.setLayoutParams(lp);
         h.progress.setVisibility(it.progress > 0 ? View.VISIBLE : View.GONE);
         h.card.setOnClickListener(v -> listener.onCardClick(it));
+        h.card.setOnLongClickListener(v -> {
+            listener.onCardLongPress(it, v);
+            return true;
+        });
         h.card.setOnFocusChangeListener((v, has) -> {
             v.animate().scaleX(has ? 1.05f : 1f).scaleY(has ? 1.05f : 1f).setDuration(150).start();
             if (has) listener.onCardFocused(row, h.getBindingAdapterPosition(), v);

@@ -2,6 +2,7 @@ package io.github.peshke.launchio;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -20,7 +21,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The hero's titles: the shows you are watching (the system Watch Next list, which Nuvio fills) and
@@ -38,6 +41,23 @@ final class Featured {
         boolean resume;
         /** How far into it you are, 0 to 1; 0 when the app did not say. */
         float progress;
+        /** Watch Next's last watched time and position: they change when you watch it again. */
+        String seen;
+    }
+
+    /** Titles removed from Continue watching, as hideToken()s. Watch Next belongs to the app, so they are only hidden here. */
+    static final String HIDDEN_KEY = "hidden_watching";
+
+    /** Changes once you watch the title again, so a hidden title comes back then. */
+    static String hideToken(Item it) {
+        return it.key + '|' + it.seen;
+    }
+
+    static void hide(Context ctx, Item it) {
+        SharedPreferences prefs = ctx.getSharedPreferences(Config.SETTINGS_NAME, Context.MODE_PRIVATE);
+        Set<String> hidden = new HashSet<>(prefs.getStringSet(HIDDEN_KEY, Collections.emptySet()));
+        hidden.add(hideToken(it));
+        prefs.edit().putStringSet(HIDDEN_KEY, hidden).apply();
     }
 
     private Featured() {}
@@ -64,6 +84,9 @@ final class Featured {
                 TvContract.WatchNextPrograms.COLUMN_BROWSABLE,
         };
         List<long[]> order = new ArrayList<>();   // {engaged, index into out}
+        SharedPreferences prefs = ctx.getSharedPreferences(Config.SETTINGS_NAME, Context.MODE_PRIVATE);
+        Set<String> hidden = prefs.getStringSet(HIDDEN_KEY, Collections.emptySet());
+        Set<String> stillHidden = new HashSet<>();
         // The provider rejects a selection or sort order from other apps: filter and sort here.
         try (Cursor c = ctx.getContentResolver().query(TvContract.WatchNextPrograms.CONTENT_URI, proj, null, null, null)) {
             while (c != null && c.moveToNext()) {
@@ -95,9 +118,16 @@ final class Featured {
                     it.logo = "https://images.metahub.space/logo/medium/" + imdb + "/img";
                 }
                 it.key = "show/" + it.pkg + "/" + it.title;
+                it.seen = c.getLong(10) + "/" + c.getLong(8);
+                if (hidden.contains(hideToken(it))) {
+                    stillHidden.add(hideToken(it));
+                    continue;
+                }
                 order.add(new long[]{c.getLong(10), out.size()});
                 out.add(it);
             }
+            // Forget the ones watched again or gone; only after a full read, or a failed one would forget them all.
+            if (stillHidden.size() != hidden.size()) prefs.edit().putStringSet(HIDDEN_KEY, stillHidden).apply();
         } catch (RuntimeException ignored) {
             // no TV provider on this device, or the permission was revoked
         }

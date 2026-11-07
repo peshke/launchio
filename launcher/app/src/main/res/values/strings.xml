@@ -71,6 +71,7 @@
     <string name="featured_picks">Featured: recommendations</string>
     <string name="featured_watching">Featured: what I\'m watching</string>
     <string name="setting_state">%1$s · %2$s</string>
+    <string name="remove_from_continue">Remove from Continue watching</string>
     <string name="continue_watching">Continue watching</string>
     <string name="resume">Resume</string>
     <string name="open_in">Open in %1$s</string>

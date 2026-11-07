@@ -1,6 +1,7 @@
 package io.github.peshke.launchio;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -71,5 +72,17 @@ public class FeaturedTest {
         assertEquals("", l.get(1).facts);
         assertEquals(1, Featured.parseCatalog(json, "movie", 1).size());
         assertEquals(0, Featured.parseCatalog(new JSONObject("{}"), "movie", 8).size());
+    }
+
+    @Test
+    public void aHiddenTitleComesBackOnceWatchedAgain() {
+        Featured.Item it = new Featured.Item();
+        it.key = "show/app.nuvio/Severance";
+        it.seen = "1000/600000";
+        String hidden = Featured.hideToken(it);
+        it.seen = "1000/600000";
+        assertEquals(hidden, Featured.hideToken(it));     // same visit: stays hidden
+        it.seen = "2000/900000";
+        assertNotEquals(hidden, Featured.hideToken(it));  // watched since: shows again
     }
 }

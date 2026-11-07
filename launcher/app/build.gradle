@@ -14,6 +14,8 @@ android {
         applicationId appId
         manifestPlaceholders = [
             homeCategory: testBuild ? 'io.github.peshke.launchio.category.TEST_HOME' : 'android.intent.category.HOME',
+            // COMMON_HOME: CVTE firmware lists only launchers that declare it (#1201 upstream).
+            commonHomeCategory: testBuild ? 'io.github.peshke.launchio.category.TEST_COMMON_HOME' : 'android.intent.category.COMMON_HOME',
             appLabel: testBuild ? 'Launchio (test)' : '@string/app_name',
         ]
         minSdk 26

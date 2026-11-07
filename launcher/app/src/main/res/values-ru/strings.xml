@@ -10,6 +10,7 @@
     <string name="not_connected">Нет устройства</string>
     <string name="live_tv">Телеканалы</string>
     <string name="no_inputs">Источники не найдены</string>
+    <string name="more_inputs">Другие источники</string>
     <string name="good_morning">Доброе утро</string>
     <string name="good_afternoon">Добрый день</string>
     <string name="good_evening">Добрый вечер</string>
@@ -21,8 +22,10 @@
     <string name="date_format">EEEE, d MMMM</string>
     <string name="date_format_home">EEEE\nd MMMM</string>
     <string name="stats_cpu">CPU %1$d%%</string>
-    <string name="stats_memory">Память %1$d МБ свободно</string>
+    <string name="stats_memory">Память %1$d / %2$d МБ</string>
     <string name="stats_storage">Накопитель %1$s свободно</string>
+    <string name="storage_gb_whole">%1$.0f ГБ</string>
+    <string name="storage_gb_decimal">%1$.1f ГБ</string>
     <string name="dream_name">Часы</string>
     <string name="vpn">VPN</string>
     <string name="vpn_off">VPN отключён</string>
@@ -51,10 +54,19 @@
     <string name="card_state_new_key">Новый ключ</string>
     <string name="card_state_new_label">Новое название</string>
     <string name="launcher_settings">Настройки главного экрана</string>
+    <string name="native_settings">Настройки производителя</string>
     <string name="columns_label">Приложений в ряду</string>
+    <string name="rows_below_dock_label">Рядов под доком</string>
+    <string name="wallpaper_label">Обои</string>
+    <string name="wallpaper_state">Обои: %1$s</string>
+    <string name="wallpaper_none">Нет</string>
+    <string name="wallpaper_applied">Обои изменены</string>
+    <string name="wallpaper_theme_default">Как в теме</string>
     <string name="animations_state">Анимация: %1$s</string>
     <string name="advanced_effects">Расширенные эффекты</string>
     <string name="advanced_effects_state">Расширенные эффекты: %1$s</string>
+    <string name="open_on_start_label">Открывать при запуске</string>
+    <string name="open_on_start_state">Открывать при запуске: %1$s</string>
     <string name="advanced_effects_warning">Приподнимает плитки, увеличивает значки и сглаживает переходы цвета. Может увеличить расход памяти; результат зависит от телевизора.</string>
     <string name="follow_theme">Следовать теме (сбросить выбор)</string>
     <string name="follow_theme_hint">Использовать параметры расположения и анимации текущей темы или встроенные. Установка или сброс темы также удаляет выбор на телевизоре.</string>
@@ -67,9 +79,14 @@
     <string name="off">Выкл.</string>
     <string name="enable">Включить</string>
     <string name="dock_edit">Изменить док</string>
+    <string name="power_menu">Перезагрузить…</string>
     <string name="dock_edit_hint">Выберите место в доке и нажмите ОК. Назад — готово.</string>
     <string name="dock_edit_pick_app">Теперь выберите приложение для этого места и нажмите ОК. Назад — выбрать другое место.</string>
+    <string name="tile_add_to_dock">Добавить в док</string>
+    <string name="tile_replace_in_dock">Заменить другим приложением</string>
+    <string name="dock_edit_pick_place">Выберите место в доке для этого приложения и нажмите ОК. Назад — отмена.</string>
     <string name="reorder">Изменить порядок приложений</string>
+    <string name="tile_move">Переместить</string>
     <string name="reorder_hint">ОК — взять приложение, стрелки — переместить, Назад — поставить. Ещё раз Назад — готово.</string>
     <string name="reorder_not_saved">Не удалось сохранить новый порядок</string>
     <string name="app_library">Библиотека приложений</string>
@@ -90,4 +107,8 @@
         <item quantity="other">%1$d приложения</item>
     </plurals>
     <string name="greeting_with_name">%1$s, %2$s</string>
+
+    <string name="clock_format_system">Системные</string>
+    <string name="clock_format_12">12-часовой</string>
+    <string name="clock_format_24">24-часовой</string>
 </resources>

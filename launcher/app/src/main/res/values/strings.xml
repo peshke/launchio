@@ -67,6 +67,17 @@
     <string name="hero_logos">Title logos in the hero</string>
     <string name="show_art">Artwork for my shows</string>
     <string name="dock_bg">Dock background</string>
+    <string name="card_shape">Card shape</string>
+    <string name="card_wide">Wide</string>
+    <string name="card_tall">Tall posters</string>
+    <string name="card_art">Card artwork</string>
+    <string name="card_standard">Standard</string>
+    <string name="card_links">My poster links</string>
+    <string name="link_wide">Poster link for wide cards</string>
+    <string name="link_tall">Poster link for tall cards</string>
+    <string name="link_set">Set</string>
+    <string name="link_unset">Not set</string>
+    <string name="link_help">Paste the custom poster link you use in Nuvio, with {imdb_id}, {tmdb_id}, {type} or {shape} in it. Leave it empty to clear it.</string>
     <string name="dock_bg_both">Backdrop and glow</string>
     <string name="dock_bg_backdrop">Backdrop</string>
     <string name="dock_bg_glow">Colour glow</string>

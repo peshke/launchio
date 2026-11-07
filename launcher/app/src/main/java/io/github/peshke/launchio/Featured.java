@@ -41,6 +41,8 @@ final class Featured {
         boolean resume;
         /** How far into it you are, 0 to 1; 0 when the app did not say. */
         float progress;
+        /** A tall poster for tall cards; the app's own when it gave one. */
+        String poster;
         /** The hero's backdrop: a clean wide picture, no title text or logo on it. */
         String clean;
         /** Watch Next's last watched time and position: they change when you watch it again. */
@@ -49,6 +51,16 @@ final class Featured {
 
     /** Titles removed from Continue watching, as hideToken()s. Watch Next belongs to the app, so they are only hidden here. */
     static final String HIDDEN_KEY = "hidden_watching";
+
+    /**
+     * A card's picture: the title's link from the chosen poster link (Nuvio's format) when there is one, else the
+     * standard poster for a tall card or backdrop for a wide one.
+     */
+    static String cardArt(Item it, boolean tall, String link) {
+        String custom = PosterLinks.resolve(link, it.id, it.type, tall ? "poster" : "landscape");
+        if (custom != null) return custom;
+        return tall && it.poster != null ? it.poster : it.backdrop;
+    }
 
     /** Changes once you watch the title again, so a hidden title comes back then. */
     static String hideToken(Item it) {
@@ -109,6 +121,7 @@ final class Featured {
                         it.id = in.getStringExtra("contentId");
                         it.type = in.getStringExtra("contentType");
                         if (in.getStringExtra("backdrop") != null) it.backdrop = in.getStringExtra("backdrop");
+                        it.poster = in.getStringExtra("poster");
                         it.logo = in.getStringExtra("logo");
                     }
                 } catch (Exception ignored) {
@@ -119,6 +132,7 @@ final class Featured {
                 if (it.id != null && it.id.startsWith("tt")) {
                     String imdb = it.id.split(":")[0];
                     it.clean = "https://images.metahub.space/background/medium/" + imdb + "/img";
+                    if (it.poster == null) it.poster = "https://images.metahub.space/poster/medium/" + imdb + "/img";
                     if (plain) {
                         it.backdrop = it.clean;
                         it.logo = "https://images.metahub.space/logo/medium/" + imdb + "/img";
@@ -178,6 +192,7 @@ final class Featured {
             it.title = str(j, "name");
             it.backdrop = str(j, "background");
             it.clean = it.backdrop;
+            it.poster = str(j, "poster");
             if (it.id == null || it.title == null || it.backdrop == null) continue;
             it.type = str(j, "type") != null ? str(j, "type") : type;
             it.description = str(j, "description");

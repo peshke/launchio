@@ -34,10 +34,15 @@ final class MediaCards extends RecyclerView.Adapter<MediaCards.Holder> {
     private final int row;
     private final Listener listener;
     private final List<Featured.Item> items = new ArrayList<>();
+    /** Tall poster cards instead of wide ones, and the poster link for this shape (null for the standard art). */
+    private final boolean tall;
+    private final String link;
 
-    MediaCards(int row, Listener listener) {
+    MediaCards(int row, Listener listener, boolean tall, String link) {
         this.row = row;
         this.listener = listener;
+        this.tall = tall;
+        this.link = link;
     }
 
     void setItems(List<Featured.Item> list) {
@@ -55,7 +60,16 @@ final class MediaCards extends RecyclerView.Adapter<MediaCards.Holder> {
     @NonNull
     @Override
     public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new Holder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_media_card, parent, false));
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_media_card, parent, false);
+        if (tall) {
+            // A 2:3 poster card, 150 x 225 dp, instead of the 240 x 135 dp wide one.
+            float d = parent.getResources().getDisplayMetrics().density;
+            v.getLayoutParams().width = Math.round(150 * d);
+            ViewGroup.LayoutParams card = v.findViewById(R.id.mediaCard).getLayoutParams();
+            card.width = Math.round(150 * d);
+            card.height = Math.round(225 * d);
+        }
+        return new Holder(v);
     }
 
     @Override
@@ -65,7 +79,7 @@ final class MediaCards extends RecyclerView.Adapter<MediaCards.Holder> {
         h.line.setText(it.facts);
         h.line.setVisibility(it.facts == null || it.facts.isEmpty() ? View.GONE : View.VISIBLE);
         h.art.setImageDrawable(null);
-        listener.loadArt(it.backdrop, h.art);
+        listener.loadArt(Featured.cardArt(it, tall, link), h.art);
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) h.progress.getLayoutParams();
         lp.width = Math.round(h.card.getLayoutParams().width * it.progress);
         h.progress.setLayoutParams(lp);

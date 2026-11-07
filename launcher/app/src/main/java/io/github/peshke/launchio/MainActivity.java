@@ -2006,6 +2006,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
         return choices().getString(DOCK_BG_KEY, DOCK_BG_BOTH);
     }
 
+    /** Row cards: tall posters instead of wide pictures; your own poster links (Nuvio's format) for each shape. */
+    static final String CARD_TALL_KEY = "card_tall", CARD_LINKS_KEY = "card_links",
+            LINK_WIDE_KEY = "poster_link_wide", LINK_TALL_KEY = "poster_link_tall";
+
     static final String HERO_PICKS_KEY = "hero_picks", HERO_WATCHING_KEY = "hero_watching",
             HERO_LOGO_KEY = "hero_logo", PLAIN_ART_KEY = "plain_art";
 
@@ -2266,7 +2270,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
 
     private void addRow(String title, String key) {
         View view = getLayoutInflater().inflate(R.layout.item_media_row, rowsPanel, false);
-        MediaRow row = new MediaRow(view, new MediaCards(rows.size(), this), key);
+        boolean tall = choices().getBoolean(CARD_TALL_KEY, false);
+        String link = choices().getBoolean(CARD_LINKS_KEY, false)
+                ? choices().getString(tall ? LINK_TALL_KEY : LINK_WIDE_KEY, null) : null;
+        MediaRow row = new MediaRow(view, new MediaCards(rows.size(), this, tall, link), key);
         row.title.setText(title);
         row.list.setLayoutManager(new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false));
         row.list.setItemAnimator(null);

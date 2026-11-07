@@ -21,8 +21,8 @@ android {
         minSdk 26
         targetSdk 34
         // Launchio's numbering: versionCode = major * 10000 + minor * 100 + patch.
-        versionCode 201
-        versionName '0.2.1'
+        versionCode 202
+        versionName '0.2.2'
     }
 
     signingConfigs {

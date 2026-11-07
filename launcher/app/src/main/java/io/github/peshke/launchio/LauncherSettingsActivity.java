@@ -36,7 +36,8 @@ public final class LauncherSettingsActivity extends Activity {
     private TextView themeChoice;
     private TextView fontChoice;
     private TextView heroPicksChoice, heroWatchingChoice, photosChoice, continueChoice, rowPeekChoice, rowsChoice;
-    private TextView heroLogoChoice, showArtChoice, dockInputsChoice, dockBgChoice;
+    private TextView heroLogoChoice, showArtChoice, dockInputsChoice, dockBgChoice, cardShapeChoice, cardArtChoice,
+            linkWideChoice, linkTallChoice;
     /** The look row that was used, kept across recreate() so its result and focus survive the redraw. */
     private int lookRow;
     private TextView animationsChoice;
@@ -131,6 +132,14 @@ public final class LauncherSettingsActivity extends Activity {
             changed();
             refresh();
         });
+        cardShapeChoice = findViewById(R.id.cardShapeChoice);
+        cardShapeChoice.setOnClickListener(v -> flip(MainActivity.CARD_TALL_KEY));
+        cardArtChoice = findViewById(R.id.cardArtChoice);
+        cardArtChoice.setOnClickListener(v -> flip(MainActivity.CARD_LINKS_KEY));
+        linkWideChoice = findViewById(R.id.linkWideChoice);
+        linkWideChoice.setOnClickListener(v -> editLink(MainActivity.LINK_WIDE_KEY, R.string.link_wide));
+        linkTallChoice = findViewById(R.id.linkTallChoice);
+        linkTallChoice.setOnClickListener(v -> editLink(MainActivity.LINK_TALL_KEY, R.string.link_tall));
         dockBgChoice = findViewById(R.id.dockBgChoice);
         dockBgChoice.setOnClickListener(v -> {
             String now = choices.getString(MainActivity.DOCK_BG_KEY, MainActivity.DOCK_BG_BOTH);
@@ -270,6 +279,41 @@ public final class LauncherSettingsActivity extends Activity {
     }
 
     /** The hero's switches: on until turned off. */
+    /** Like toggle(), for a choice that is off until picked. */
+    private void flip(String key) {
+        choices.edit().putBoolean(key, !choices.getBoolean(key, false)).apply();
+        changed();
+        refresh();
+    }
+
+    /** A poster link in Nuvio's format, pasted with the TV's keyboard or the phone remote; empty clears it. */
+    private void editLink(String key, int title) {
+        android.widget.EditText field = new android.widget.EditText(this);
+        field.setSingleLine(true);
+        field.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        field.setHint("https://\u2026/{imdb_id}");
+        field.setText(choices.getString(key, ""));
+        // The keyboard covers OK on a TV: its Enter key saves.
+        field.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(R.string.link_help)
+                .setView(field)
+                .setPositiveButton(android.R.string.ok, (d, which) -> {
+                    String link = field.getText().toString().trim();
+                    if (link.isEmpty()) choices.edit().remove(key).apply();
+                    else choices.edit().putString(key, link).apply();
+                    changed();
+                    refresh();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+        field.setOnEditorActionListener((v, action, event) -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+            return true;
+        });
+    }
+
     private void toggle(String key) {
         choices.edit().putBoolean(key, !choices.getBoolean(key, true)).apply();
         changed();
@@ -485,6 +529,15 @@ public final class LauncherSettingsActivity extends Activity {
         }
         rowsChoice.setText(getString(R.string.setting_state, getString(R.string.rows_label),
                 rowNames.length() > 0 ? rowNames : getString(R.string.off)));
+        boolean tall = choices.getBoolean(MainActivity.CARD_TALL_KEY, false);
+        cardShapeChoice.setText(getString(R.string.setting_state, getString(R.string.card_shape),
+                getString(tall ? R.string.card_tall : R.string.card_wide)));
+        cardArtChoice.setText(getString(R.string.setting_state, getString(R.string.card_art),
+                getString(choices.getBoolean(MainActivity.CARD_LINKS_KEY, false) ? R.string.card_links : R.string.card_standard)));
+        linkWideChoice.setText(getString(R.string.setting_state, getString(R.string.link_wide),
+                getString(choices.contains(MainActivity.LINK_WIDE_KEY) ? R.string.link_set : R.string.link_unset)));
+        linkTallChoice.setText(getString(R.string.setting_state, getString(R.string.link_tall),
+                getString(choices.contains(MainActivity.LINK_TALL_KEY) ? R.string.link_set : R.string.link_unset)));
         rowPeekChoice.setText(getString(R.string.setting_state, getString(R.string.row_peek),
                 getString(choices.getBoolean(MainActivity.ROW_PEEK_KEY, false) ? R.string.on : R.string.off)));
         photosChoice.setText(getString(R.string.setting_state, getString(R.string.background_photos),

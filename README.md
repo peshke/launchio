@@ -6,11 +6,15 @@ A home screen for Android TV and Google TV that plays nicely with
 [Nuvio](https://github.com/NuvioMedia/NuvioTV). Built on the launcher from
 [CleanYourTV](https://github.com/Gathin23/cleanyourtv) by Gathin.
 
-> **Work in progress (0.2 line).** This is Launchio rebuilt on CleanYourTV's launcher. Launchio's
-> features from the 0.1 line (Continue watching, the featured hero with your shows and
-> recommendations, Nuvio's themes, TV inputs in the dock, now playing, the power menu) are being
-> brought over stage by stage. Until then, the current release is
-> [Launchio 0.1.1](https://github.com/peshke/launchio-legacy/releases/tag/0.1.1).
+- **Featured hero:** your shows from Continue watching and picks from Cinemeta, with backdrop,
+  title logo and a Resume / Open in Nuvio button.
+- **Rows under the dock:** Continue watching (hold OK on a card to remove it) and catalog rows; the
+  backdrop follows the focused card.
+- **Nuvio's look:** its 12 themes plus the original Default, three fonts, Nuvio's own artwork or plain.
+- **TV inputs in the dock**, as tiles.
+
+Get the APK from [Releases](https://github.com/peshke/launchio/releases). The 0.1 line lives on at
+[launchio-legacy](https://github.com/peshke/launchio-legacy).
 
 ## Build and install
 
@@ -29,5 +33,7 @@ puts the stock launcher back if Home doesn't end up on Launchio. On Windows, use
 
 Launchio is built on [CleanYourTV](https://github.com/Gathin23/cleanyourtv) by Gathin (MIT), and
 its 0.1 line started from [tv-home](https://github.com/mihirgupta0900/tv-home) by Mihir Gupta (MIT).
-Design language from [Nuvio](https://github.com/NuvioMedia/NuvioTV). The Outfit typeface is under the
-SIL Open Font License (`launcher/FONT-LICENSE-OFL.txt`). Code is MIT, see [LICENSE](LICENSE).
+Design language from [Nuvio](https://github.com/NuvioMedia/NuvioTV). The Outfit, Inter and DM Sans
+typefaces are under the SIL Open Font License (`launcher/FONT-LICENSE-OFL*.txt`); the background photos
+are from Wikimedia Commons (`launcher/app/src/main/assets/PHOTO-CREDITS.md`). Code is MIT, see
+[LICENSE](LICENSE).

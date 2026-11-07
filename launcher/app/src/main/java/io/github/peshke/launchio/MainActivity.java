@@ -1914,6 +1914,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
         lastDockTop = dockTopInRoot;
         if (!featured.isEmpty()) {
             showFeaturedShelf();
+            // The original launcher's glow in the app's colour, over the backdrop (between it and the scrim) or alone.
+            if (ambientGlow && !DOCK_BG_BACKDROP.equals(dockBackground())) {
+                stopAmbientAnimation();
+                ambient.animate().cancel();
+                setAmbient(color);
+                if (animations) ambient.animate().alpha(1f).setDuration(reducedMotion ? 100 : 500).start();
+                else ambient.setAlpha(1f);
+            }
             return;
         }
         if (backdropLayer) {
@@ -1989,6 +1997,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
     }
 
     // ---- featured titles in the hero --------------------------------------------------------------
+
+    /** What a focused dock tile shows behind Home while the hero has titles: one of DOCK_BG_*. */
+    static final String DOCK_BG_KEY = "dock_background";
+    static final String DOCK_BG_BOTH = "both", DOCK_BG_BACKDROP = "backdrop", DOCK_BG_GLOW = "glow";
+
+    private String dockBackground() {
+        return choices().getString(DOCK_BG_KEY, DOCK_BG_BOTH);
+    }
 
     static final String HERO_PICKS_KEY = "hero_picks", HERO_WATCHING_KEY = "hero_watching",
             HERO_LOGO_KEY = "hero_logo", PLAIN_ART_KEY = "plain_art";
@@ -2109,16 +2125,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
 
     /** The dock (or the hero's button) has focus: the hero and its backdrop show. */
     private void showFeaturedShelf() {
-        backdropMode(true);
+        float art = DOCK_BG_GLOW.equals(dockBackground()) ? 0f : 1f;   // the glow alone: no picture and no scrim
+        backdropMode(art > 0f);
         hero.animate().cancel();
         heroArt.animate().cancel();
         placeHero();
         if (!animations) {
             hero.setAlpha(1f);
-            heroArt.setAlpha(1f);
+            heroArt.setAlpha(art);
         } else {
             hero.animate().alpha(1f).setDuration(reducedMotion ? 100 : 260).start();
-            heroArt.animate().alpha(1f).setDuration(reducedMotion ? 140 : 600).start();
+            heroArt.animate().alpha(art).setDuration(reducedMotion ? 140 : 600).start();
         }
         heroShown = true;
         // Back from the rows, where the backdrop followed the cards: the hero's own picture again.
@@ -2148,7 +2165,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
     }
 
     private void swapBackdrop(Bitmap bm) {
-        float shown = heroShown || cardFocused ? 1f : 0f;
+        // A card always shows its backdrop; the hero only when the dock background is not the glow alone.
+        float shown = cardFocused || heroShown && !DOCK_BG_GLOW.equals(dockBackground()) ? 1f : 0f;
         heroArt.animate().cancel();
         if (!animations || heroArt.getDrawable() == null) {
             heroArt.setImageBitmap(bm);

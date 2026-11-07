@@ -66,6 +66,10 @@
     <string name="dock_inputs">Inputs in the dock</string>
     <string name="hero_logos">Title logos in the hero</string>
     <string name="show_art">Artwork for my shows</string>
+    <string name="dock_bg">Dock background</string>
+    <string name="dock_bg_both">Backdrop and glow</string>
+    <string name="dock_bg_backdrop">Backdrop</string>
+    <string name="dock_bg_glow">Colour glow</string>
     <string name="art_nuvio">Same as Nuvio</string>
     <string name="art_plain">Plain</string>
     <string name="featured_picks">Featured: recommendations</string>

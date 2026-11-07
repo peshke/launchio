@@ -36,7 +36,7 @@ public final class LauncherSettingsActivity extends Activity {
     private TextView themeChoice;
     private TextView fontChoice;
     private TextView heroPicksChoice, heroWatchingChoice, photosChoice, continueChoice, rowPeekChoice, rowsChoice;
-    private TextView heroLogoChoice, showArtChoice, dockInputsChoice;
+    private TextView heroLogoChoice, showArtChoice, dockInputsChoice, dockBgChoice;
     /** The look row that was used, kept across recreate() so its result and focus survive the redraw. */
     private int lookRow;
     private TextView animationsChoice;
@@ -128,6 +128,15 @@ public final class LauncherSettingsActivity extends Activity {
         showArtChoice = findViewById(R.id.showArtChoice);
         showArtChoice.setOnClickListener(v -> {
             choices.edit().putBoolean(MainActivity.PLAIN_ART_KEY, !choices.getBoolean(MainActivity.PLAIN_ART_KEY, false)).apply();
+            changed();
+            refresh();
+        });
+        dockBgChoice = findViewById(R.id.dockBgChoice);
+        dockBgChoice.setOnClickListener(v -> {
+            String now = choices.getString(MainActivity.DOCK_BG_KEY, MainActivity.DOCK_BG_BOTH);
+            String next = MainActivity.DOCK_BG_BOTH.equals(now) ? MainActivity.DOCK_BG_BACKDROP
+                    : MainActivity.DOCK_BG_BACKDROP.equals(now) ? MainActivity.DOCK_BG_GLOW : MainActivity.DOCK_BG_BOTH;
+            choices.edit().putString(MainActivity.DOCK_BG_KEY, next).apply();
             changed();
             refresh();
         });
@@ -456,6 +465,10 @@ public final class LauncherSettingsActivity extends Activity {
                 getString(choices.getBoolean(MainActivity.CONTINUE_KEY, true) ? R.string.on : R.string.off)));
         heroLogoChoice.setText(getString(R.string.setting_state, getString(R.string.hero_logos),
                 getString(choices.getBoolean(MainActivity.HERO_LOGO_KEY, true) ? R.string.on : R.string.off)));
+        String bg = choices.getString(MainActivity.DOCK_BG_KEY, MainActivity.DOCK_BG_BOTH);
+        dockBgChoice.setText(getString(R.string.setting_state, getString(R.string.dock_bg),
+                getString(MainActivity.DOCK_BG_BACKDROP.equals(bg) ? R.string.dock_bg_backdrop
+                        : MainActivity.DOCK_BG_GLOW.equals(bg) ? R.string.dock_bg_glow : R.string.dock_bg_both)));
         showArtChoice.setText(getString(R.string.setting_state, getString(R.string.show_art),
                 getString(choices.getBoolean(MainActivity.PLAIN_ART_KEY, false) ? R.string.art_plain : R.string.art_nuvio)));
         StringBuilder inputNames = new StringBuilder();

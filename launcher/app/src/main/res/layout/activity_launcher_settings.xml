@@ -54,6 +54,11 @@
             android:layout_marginTop="10dp" />
 
         <TextView
+            android:id="@+id/dockBgChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
             android:id="@+id/continueChoice"
             style="@style/SettingsRow"
             android:layout_marginTop="10dp" />

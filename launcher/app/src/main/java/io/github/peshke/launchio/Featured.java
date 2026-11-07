@@ -170,15 +170,23 @@ final class Featured {
         return b.toString();
     }
 
-    /** One catalog ("movie/top") from the add-on, as hero titles; empty when offline. */
+    /** One catalog ("movie/top", or a whole catalog link from another add-on), as hero titles; empty when offline. */
     static List<Item> catalog(String addon, String catalog, int max) {
-        byte[] data = read(addon + "/catalog/" + catalog + ".json", 4 << 20);
+        boolean link = catalog.startsWith("http");
+        byte[] data = read(link ? catalog : addon + "/catalog/" + catalog + ".json", 4 << 20);
         if (data == null) return new ArrayList<>();
         try {
-            return parseCatalog(new JSONObject(new String(data, StandardCharsets.UTF_8)), catalog.split("/")[0], max);
+            return parseCatalog(new JSONObject(new String(data, StandardCharsets.UTF_8)),
+                    link ? catalogType(catalog) : catalog.split("/")[0], max);
         } catch (JSONException e) {
             return new ArrayList<>();
         }
+    }
+
+    /** The type in a catalog link: ".../catalog/series/my-list.json" is "series". */
+    static String catalogType(String link) {
+        int at = link.indexOf("/catalog/");
+        return at < 0 ? "movie" : link.substring(at + 9).split("/")[0];
     }
 
     static List<Item> parseCatalog(JSONObject json, String type, int max) {

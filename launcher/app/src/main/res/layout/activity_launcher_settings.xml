@@ -54,6 +54,26 @@
             android:layout_marginTop="10dp" />
 
         <TextView
+            android:id="@+id/heroCatalogsChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/myCatalogChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/hiddenChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
+            android:id="@+id/clockBgChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="10dp" />
+
+        <TextView
             android:id="@+id/dockBgChoice"
             style="@style/SettingsRow"
             android:layout_marginTop="10dp" />

@@ -85,4 +85,11 @@ public class FeaturedTest {
         it.seen = "2000/900000";
         assertNotEquals(hidden, Featured.hideToken(it));  // watched since: shows again
     }
+
+    @Test
+    public void catalogLinkType() {
+        assertEquals("series", Featured.catalogType("https://addon.test/abc/catalog/series/my-list.json"));
+        assertEquals("movie", Featured.catalogType("https://addon.test/catalog/movie/top/skip=20.json"));
+        assertEquals("movie", Featured.catalogType("https://addon.test/manifest.json"));
+    }
 }

@@ -44,8 +44,8 @@
     <!-- An "Open on start" row in Launcher settings: pick any app on the TV, and the first time Home comes up
          after the TV starts it opens that app instead. Once per boot, like boot_to_live_tv (which wins when
          both are set); Home after that stays Home, and an app that is gone or disabled leaves Home on screen.
-         Off by default; a theme can set "open_on_start_choice": true. -->
-    <bool name="open_on_start_choice">false</bool>
+         Shown by default; nothing opens until an app is picked there. A theme can set "open_on_start_choice": false. -->
+    <bool name="open_on_start_choice">true</bool>
     <!-- With open_on_start_choice: the picked app also opens each time the screen comes back on, for sets whose
          remote powers them into a light sleep with no boot. It opens over whatever was in front, an HDMI input
          included. Off by default; a theme can set "open_on_start_on_wake": true. -->

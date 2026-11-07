@@ -37,7 +37,7 @@ public final class LauncherSettingsActivity extends Activity {
     private TextView fontChoice;
     private TextView heroPicksChoice, heroWatchingChoice, photosChoice, continueChoice, rowPeekChoice, rowsChoice;
     private TextView heroLogoChoice, showArtChoice, dockInputsChoice, dockBgChoice, cardShapeChoice, cardArtChoice,
-            linkWideChoice, linkTallChoice;
+            linkWideChoice, linkTallChoice, heroCatalogsChoice, myCatalogChoice, hiddenChoice, clockBgChoice;
     /** The look row that was used, kept across recreate() so its result and focus survive the redraw. */
     private int lookRow;
     private TextView animationsChoice;
@@ -137,9 +137,37 @@ public final class LauncherSettingsActivity extends Activity {
         cardArtChoice = findViewById(R.id.cardArtChoice);
         cardArtChoice.setOnClickListener(v -> flip(MainActivity.CARD_LINKS_KEY));
         linkWideChoice = findViewById(R.id.linkWideChoice);
-        linkWideChoice.setOnClickListener(v -> editLink(MainActivity.LINK_WIDE_KEY, R.string.link_wide));
+        linkWideChoice.setOnClickListener(v -> editLink(MainActivity.LINK_WIDE_KEY, R.string.link_wide, R.string.link_help));
         linkTallChoice = findViewById(R.id.linkTallChoice);
-        linkTallChoice.setOnClickListener(v -> editLink(MainActivity.LINK_TALL_KEY, R.string.link_tall));
+        linkTallChoice.setOnClickListener(v -> editLink(MainActivity.LINK_TALL_KEY, R.string.link_tall, R.string.link_help));
+        heroCatalogsChoice = findViewById(R.id.heroCatalogsChoice);
+        heroCatalogsChoice.setOnClickListener(v -> showCatalogPicker(R.string.hero_catalogs,
+                MainActivity.HERO_CATALOGS_KEY, MainActivity.heroChoices(choices, getResources())));
+        myCatalogChoice = findViewById(R.id.myCatalogChoice);
+        myCatalogChoice.setOnClickListener(v -> editLink(MainActivity.MY_CATALOG_KEY, R.string.my_catalog_link,
+                R.string.my_catalog_help));
+        hiddenChoice = findViewById(R.id.hiddenChoice);
+        hiddenChoice.setOnClickListener(v -> {
+            if (choices.getStringSet(MainActivity.HIDDEN_PICKS_KEY, java.util.Collections.emptySet()).isEmpty()) return;
+            new AlertDialog.Builder(this)
+                    .setMessage(R.string.hidden_show_again)
+                    .setPositiveButton(android.R.string.ok, (d, which) -> {
+                        choices.edit().remove(MainActivity.HIDDEN_PICKS_KEY).apply();
+                        changed();
+                        refresh();
+                    })
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show();
+        });
+        clockBgChoice = findViewById(R.id.clockBgChoice);
+        clockBgChoice.setOnClickListener(v -> {
+            String now = clockBackground();
+            String next = MainActivity.CLOCK_BG_GLOW.equals(now) ? MainActivity.CLOCK_BG_PHOTOS
+                    : MainActivity.CLOCK_BG_PHOTOS.equals(now) ? MainActivity.CLOCK_BG_BACKDROPS : MainActivity.CLOCK_BG_GLOW;
+            choices.edit().putString(MainActivity.CLOCK_BG_KEY, next).apply();
+            changed();
+            refresh();
+        });
         dockBgChoice = findViewById(R.id.dockBgChoice);
         dockBgChoice.setOnClickListener(v -> {
             String now = choices.getString(MainActivity.DOCK_BG_KEY, MainActivity.DOCK_BG_BOTH);
@@ -287,7 +315,14 @@ public final class LauncherSettingsActivity extends Activity {
     }
 
     /** A poster link in Nuvio's format, pasted with the TV's keyboard or the phone remote; empty clears it. */
-    private void editLink(String key, int title) {
+    /** The clock screensaver's background as chosen, or as config.xml's clock_wallpaper has it. */
+    private String clockBackground() {
+        String bg = choices.getString(MainActivity.CLOCK_BG_KEY, null);
+        if (bg != null) return bg;
+        return Config.load(this).clockWallpaper ? MainActivity.CLOCK_BG_PHOTOS : MainActivity.CLOCK_BG_GLOW;
+    }
+
+    private void editLink(String key, int title, int help) {
         android.widget.EditText field = new android.widget.EditText(this);
         field.setSingleLine(true);
         field.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
@@ -297,7 +332,7 @@ public final class LauncherSettingsActivity extends Activity {
         field.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(title)
-                .setMessage(R.string.link_help)
+                .setMessage(help)
                 .setView(field)
                 .setPositiveButton(android.R.string.ok, (d, which) -> {
                     String link = field.getText().toString().trim();
@@ -352,8 +387,12 @@ public final class LauncherSettingsActivity extends Activity {
 
     /** Which catalogs get a row under Continue watching. */
     private void showRowsPicker() {
-        List<String[]> all = MainActivity.catalogChoices(getResources());
-        List<String> chosen = MainActivity.chosenCatalogs(choices, getResources());
+        showCatalogPicker(R.string.rows_label, MainActivity.CATALOGS_KEY, MainActivity.chosenCatalogs(choices, getResources()));
+    }
+
+    /** Which catalogs to use, saved under key; for the rows and for the Featured picks. */
+    private void showCatalogPicker(int title, String key, List<String> chosen) {
+        List<String[]> all = MainActivity.catalogChoices(getResources(), choices);
         String[] labels = new String[all.size()];
         boolean[] checked = new boolean[all.size()];
         for (int i = 0; i < all.size(); i++) {
@@ -361,14 +400,14 @@ public final class LauncherSettingsActivity extends Activity {
             checked[i] = chosen.contains(all.get(i)[0]);
         }
         new AlertDialog.Builder(this)
-                .setTitle(R.string.rows_label)
+                .setTitle(title)
                 .setMultiChoiceItems(labels, checked, (dialog, which, on) -> checked[which] = on)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
                     StringBuilder keys = new StringBuilder();
                     for (int i = 0; i < all.size(); i++) {
                         if (checked[i]) keys.append(keys.length() > 0 ? "," : "").append(all.get(i)[0]);
                     }
-                    choices.edit().putString(MainActivity.CATALOGS_KEY, keys.toString()).apply();
+                    choices.edit().putString(key, keys.toString()).apply();
                     changed();
                     refresh();
                 })
@@ -524,9 +563,23 @@ public final class LauncherSettingsActivity extends Activity {
                 inputNames.length() > 0 ? inputNames : getString(R.string.off)));
         StringBuilder rowNames = new StringBuilder();
         List<String> chosenRows = MainActivity.chosenCatalogs(choices, getResources());
-        for (String[] c : MainActivity.catalogChoices(getResources())) {
+        StringBuilder heroNames = new StringBuilder();
+        List<String> chosenHero = MainActivity.heroChoices(choices, getResources());
+        for (String[] c : MainActivity.catalogChoices(getResources(), choices)) {
             if (chosenRows.contains(c[0])) rowNames.append(rowNames.length() > 0 ? ", " : "").append(c[1]);
+            if (chosenHero.contains(c[0])) heroNames.append(heroNames.length() > 0 ? ", " : "").append(c[1]);
         }
+        heroCatalogsChoice.setText(getString(R.string.setting_state, getString(R.string.hero_catalogs),
+                heroNames.length() > 0 ? heroNames : getString(R.string.off)));
+        myCatalogChoice.setText(getString(R.string.setting_state, getString(R.string.my_catalog_link),
+                getString(choices.contains(MainActivity.MY_CATALOG_KEY) ? R.string.link_set : R.string.link_unset)));
+        int hidden = choices.getStringSet(MainActivity.HIDDEN_PICKS_KEY, java.util.Collections.emptySet()).size();
+        hiddenChoice.setText(getString(R.string.setting_state, getString(R.string.hidden_titles),
+                hidden > 0 ? String.valueOf(hidden) : getString(R.string.hidden_none)));
+        String clockBg = clockBackground();
+        clockBgChoice.setText(getString(R.string.setting_state, getString(R.string.clock_bg),
+                getString(MainActivity.CLOCK_BG_PHOTOS.equals(clockBg) ? R.string.clock_bg_photos
+                        : MainActivity.CLOCK_BG_BACKDROPS.equals(clockBg) ? R.string.clock_bg_backdrops : R.string.clock_bg_glow)));
         rowsChoice.setText(getString(R.string.setting_state, getString(R.string.rows_label),
                 rowNames.length() > 0 ? rowNames : getString(R.string.off)));
         boolean tall = choices.getBoolean(MainActivity.CARD_TALL_KEY, false);

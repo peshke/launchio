@@ -85,6 +85,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -693,7 +694,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
         });
         addRow(getString(R.string.continue_watching), null);
         List<String> chosen = chosenCatalogs(choices(), getResources());
-        for (String[] c : catalogChoices(getResources())) if (chosen.contains(c[0])) addRow(c[1], c[0]);
+        for (String[] c : catalogChoices(getResources(), choices())) {
+            if (chosen.contains(c[0])) addRow(c[1], catalogKey(choices(), c[0]));
+        }
         continueOn = choices().getBoolean(CONTINUE_KEY, true);
         rowPeek = choices().getBoolean(ROW_PEEK_KEY, false);
         rowsPanel.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
@@ -2010,6 +2013,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
     static final String CARD_TALL_KEY = "card_tall", CARD_LINKS_KEY = "card_links",
             LINK_WIDE_KEY = "poster_link_wide", LINK_TALL_KEY = "poster_link_tall";
 
+    /** Featured picks from these catalogs; "my" is the link pasted in My catalog. */
+    static final String HERO_CATALOGS_KEY = "hero_catalogs", MY_CATALOG_KEY = "my_catalog", MY_CATALOG = "my";
+    /** Recommendations hidden with hold OK, by id. */
+    static final String HIDDEN_PICKS_KEY = "hidden_picks";
+    /** The clock screensaver's background; unset follows config.xml clock_wallpaper. */
+    static final String CLOCK_BG_KEY = "clock_background";
+    static final String CLOCK_BG_GLOW = "glow", CLOCK_BG_PHOTOS = "photos", CLOCK_BG_BACKDROPS = "backdrops";
+
     static final String HERO_PICKS_KEY = "hero_picks", HERO_WATCHING_KEY = "hero_watching",
             HERO_LOGO_KEY = "hero_logo", PLAIN_ART_KEY = "plain_art";
 
@@ -2019,21 +2030,22 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
 
     /** Your shows from Watch Next and the add-on's recommendations, off the main thread; then the hero shows them. */
     private void loadFeatured() {
-        String[] heroCatalogs = getResources().getStringArray(R.array.hero_catalogs);
+        List<String> heroCatalogs = new ArrayList<>();
+        for (String c : heroChoices(choices(), getResources())) heroCatalogs.add(catalogKey(choices(), c));
         Set<String> need = new java.util.LinkedHashSet<>();
-        if (heroPicks) need.addAll(java.util.Arrays.asList(heroCatalogs));
+        if (heroPicks) need.addAll(heroCatalogs);
         for (MediaRow r : rows) if (r.key != null) need.add(r.key);
         if (need.isEmpty() && !heroWatching && !continueOn) return;
         feed.load(this, getString(R.string.catalog_addon), need, heroWatching || continueOn,
                 heroWatching ? Featured.SHOWS : 0, plainArt, (watching, shows, catalogs) -> {
                     if (isDestroyed() || !started) return;
                     List<List<Featured.Item>> heroLists = new ArrayList<>();
-                    if (heroPicks) for (String c : heroCatalogs) if (catalogs.containsKey(c)) heroLists.add(catalogs.get(c));
+                    if (heroPicks) for (String c : heroCatalogs) if (catalogs.containsKey(c)) heroLists.add(unhidden(catalogs.get(c)));
                     setFeatured(Featured.mix(shows, heroLists, Featured.MAX));
                     showRow(0, continueOn ? watching : new ArrayList<>());
                     for (int i = 1; i < rows.size(); i++) {
                         List<Featured.Item> l = catalogs.get(rows.get(i).key);
-                        showRow(i, l != null ? l : new ArrayList<>());
+                        showRow(i, l != null ? unhidden(l) : new ArrayList<>());
                     }
                 });
     }
@@ -2165,7 +2177,39 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
         heroArt.setTag(url);
         images.load(url, getResources().getDisplayMetrics().widthPixels / 2, false, bm -> {
             if (started && url.equals(heroArt.getTag())) swapBackdrop(bm);
+            saveForClock(url, bm);
         });
+    }
+
+    /**
+     * Clock screensaver › Backdrops: keeps the hero's backdrops as files for it, the latest 20.
+     * shortcut: saved at the half-width Home decodes them at, so the screensaver scales them up; save full size if
+     * that looks soft on a 4K set.
+     */
+    private void saveForClock(String url, Bitmap bm) {
+        if (!CLOCK_BG_BACKDROPS.equals(choices().getString(CLOCK_BG_KEY, null))) return;
+        File dir = new File(getFilesDir(), "clock");
+        File file = new File(dir, Integer.toHexString(url.hashCode()) + ".jpg");
+        if (file.isFile()) return;
+        new Thread(() -> {
+            if (!dir.isDirectory() && !dir.mkdirs()) return;
+            File tmp = new File(file.getPath() + ".part");
+            try (java.io.FileOutputStream out = new java.io.FileOutputStream(tmp)) {
+                bm.compress(Bitmap.CompressFormat.JPEG, 85, out);
+            } catch (java.io.IOException e) {
+                tmp.delete();
+                return;
+            }
+            if (!tmp.renameTo(file)) {
+                tmp.delete();
+                return;
+            }
+            File[] all = dir.listFiles((d, n) -> n.endsWith(".jpg"));
+            if (all != null && all.length > 20) {
+                java.util.Arrays.sort(all, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
+                for (int i = 0; i < all.length - 20; i++) all[i].delete();
+            }
+        }, "clock-backdrop").start();
     }
 
     private void swapBackdrop(Bitmap bm) {
@@ -2250,22 +2294,36 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
     }
 
     /** The catalogs Settings offers, as {key, row title}, from config.xml's catalog_choices. */
-    static List<String[]> catalogChoices(android.content.res.Resources res) {
+    static List<String[]> catalogChoices(android.content.res.Resources res, SharedPreferences prefs) {
         List<String[]> out = new ArrayList<>();
         for (String s : res.getStringArray(R.array.catalog_choices)) {
             int bar = s.indexOf('|');
             if (bar > 0) out.add(new String[]{s.substring(0, bar), s.substring(bar + 1)});
         }
+        if (prefs.contains(MY_CATALOG_KEY)) out.add(new String[]{MY_CATALOG, res.getString(R.string.my_catalog)});
         return out;
+    }
+
+    /** What Feed fetches for a choice: My catalog is its link. */
+    static String catalogKey(SharedPreferences prefs, String choice) {
+        return MY_CATALOG.equals(choice) ? prefs.getString(MY_CATALOG_KEY, choice) : choice;
+    }
+
+    /** The choices saved under key (comma separated), in Settings' order; fallback until one is saved. */
+    static List<String> picked(SharedPreferences prefs, android.content.res.Resources res, String key, String fallback) {
+        List<String> saved = java.util.Arrays.asList(prefs.getString(key, fallback).split(","));
+        List<String> out = new ArrayList<>();
+        for (String[] c : catalogChoices(res, prefs)) if (saved.contains(c[0])) out.add(c[0]);
+        return out;
+    }
+
+    static List<String> heroChoices(SharedPreferences prefs, android.content.res.Resources res) {
+        return picked(prefs, res, HERO_CATALOGS_KEY, android.text.TextUtils.join(",", res.getStringArray(R.array.hero_catalogs)));
     }
 
     /** The catalogs chosen in Settings, in Settings' order; config.xml's catalog_rows_default until a choice is saved. */
     static List<String> chosenCatalogs(SharedPreferences prefs, android.content.res.Resources res) {
-        String saved = prefs.getString(CATALOGS_KEY, res.getString(R.string.catalog_rows_default));
-        List<String> picked = java.util.Arrays.asList(saved.split(","));
-        List<String> out = new ArrayList<>();
-        for (String[] c : catalogChoices(res)) if (picked.contains(c[0])) out.add(c[0]);
-        return out;
+        return picked(prefs, res, CATALOGS_KEY, res.getString(R.string.catalog_rows_default));
     }
 
     private void addRow(String title, String key) {
@@ -3997,15 +4055,30 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
 
     @Override
     public void onCardLongPress(Featured.Item item, View card) {
-        if (!item.resume || openPopup != null) return;   // only Continue watching has a menu
+        if (openPopup != null || (!item.resume && item.id == null)) return;
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
-        addSettingsMenuRow(rows, popup, R.string.remove_from_continue, () -> {
-            Featured.hide(this, item);
+        addSettingsMenuRow(rows, popup, item.resume ? R.string.remove_from_continue : R.string.hide_title, () -> {
+            if (item.resume) {
+                Featured.hide(this, item);
+            } else {
+                Set<String> hidden = new java.util.HashSet<>(choices().getStringSet(HIDDEN_PICKS_KEY, java.util.Collections.emptySet()));
+                hidden.add(item.id);
+                choices().edit().putStringSet(HIDDEN_PICKS_KEY, hidden).apply();
+            }
             loadFeatured();
         });
         showMenu(popup, panel, card);
+    }
+
+    /** A catalog without the titles hidden with hold OK. */
+    private List<Featured.Item> unhidden(List<Featured.Item> list) {
+        Set<String> hidden = choices().getStringSet(HIDDEN_PICKS_KEY, java.util.Collections.emptySet());
+        if (hidden.isEmpty()) return list;
+        List<Featured.Item> out = new ArrayList<>();
+        for (Featured.Item it : list) if (!hidden.contains(it.id)) out.add(it);
+        return out;
     }
 
     /** Opens a menu of rows under the view it is for, or above it when it would not fit below. */

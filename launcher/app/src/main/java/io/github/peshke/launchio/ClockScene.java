@@ -121,7 +121,25 @@ final class ClockScene {
         } catch (RuntimeException e) {
             return;
         }
-        if (!cfg.clockWallpaper) {
+        String bg = ctx.getSharedPreferences(Config.SETTINGS_NAME, Context.MODE_PRIVATE)
+                .getString(MainActivity.CLOCK_BG_KEY, null);
+        if (MainActivity.CLOCK_BG_BACKDROPS.equals(bg)) {
+            // The hero's backdrops Home kept (MainActivity.saveForClock), a new one every minute; none yet: the glow.
+            File[] kept = new File(ctx.getFilesDir(), "clock").listFiles((d, n) -> n.endsWith(".jpg"));
+            if (kept != null && kept.length > 0) {
+                rotation = new ArrayList<>(java.util.Arrays.asList(kept));
+                wallpaperFile = rotation.get(random.nextInt(rotation.size()));
+                rotationMs = 60_000L;
+                order = WallpaperRotation.ORDER_SHUFFLE;
+                moods = java.util.Collections.emptyMap();
+                latitude = longitude = "";
+                wallpaperShade = (cfg.clockWallpaperDim * 255 / 100) << 24;
+                wallpaperRes = ctx.getResources();
+            }
+            return;
+        }
+        boolean photos = bg == null ? cfg.clockWallpaper : MainActivity.CLOCK_BG_PHOTOS.equals(bg);
+        if (!photos) {
             // clock_glow false: plain black behind the clock (OLED); the clock itself still moves every minute.
             if (!cfg.clockGlow) {
                 wallpaperShown = true;   // also stops the glow's colour cycle

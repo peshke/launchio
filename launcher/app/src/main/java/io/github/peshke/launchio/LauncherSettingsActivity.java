@@ -128,7 +128,7 @@ public final class LauncherSettingsActivity extends Activity {
         showArtChoice = findViewById(R.id.showArtChoice);
         showArtChoice.setOnClickListener(v -> {
             choices.edit().putBoolean(MainActivity.PLAIN_ART_KEY, !choices.getBoolean(MainActivity.PLAIN_ART_KEY, false)).apply();
-            setResult(RESULT_OK);
+            changed();
             refresh();
         });
         dockInputsChoice = findViewById(R.id.dockInputsChoice);
@@ -138,7 +138,7 @@ public final class LauncherSettingsActivity extends Activity {
         rowPeekChoice = findViewById(R.id.rowPeekChoice);
         rowPeekChoice.setOnClickListener(v -> {
             choices.edit().putBoolean(MainActivity.ROW_PEEK_KEY, !choices.getBoolean(MainActivity.ROW_PEEK_KEY, false)).apply();
-            setResult(RESULT_OK);
+            changed();
             refresh();
         });
         photosChoice = findViewById(R.id.photosChoice);
@@ -194,7 +194,7 @@ public final class LauncherSettingsActivity extends Activity {
         refresh();
         lookRow = state == null ? 0 : state.getInt("look_row");
         if (lookRow != 0) {
-            setResult(RESULT_OK);   // a theme or font changed before the redraw: Home must rebuild too
+            changed();   // a theme or font changed before the redraw: Home must rebuild too
             findViewById(lookRow).requestFocus();
         } else if (config.launcherSettingsButton) {
             reorderChoice.requestFocus();
@@ -263,7 +263,7 @@ public final class LauncherSettingsActivity extends Activity {
     /** The hero's switches: on until turned off. */
     private void toggle(String key) {
         choices.edit().putBoolean(key, !choices.getBoolean(key, true)).apply();
-        setResult(RESULT_OK);
+        changed();
         refresh();
     }
 
@@ -290,7 +290,7 @@ public final class LauncherSettingsActivity extends Activity {
                         if (checked[i]) ids.append(ids.length() > 0 ? "," : "").append(all.get(i).id);
                     }
                     choices.edit().putString(MainActivity.DOCK_INPUTS_KEY, ids.toString()).apply();
-                    setResult(RESULT_OK);
+                    changed();
                     refresh();
                 })
                 .setNegativeButton(android.R.string.cancel, null)
@@ -316,7 +316,7 @@ public final class LauncherSettingsActivity extends Activity {
                         if (checked[i]) keys.append(keys.length() > 0 ? "," : "").append(all.get(i)[0]);
                     }
                     choices.edit().putString(MainActivity.CATALOGS_KEY, keys.toString()).apply();
-                    setResult(RESULT_OK);
+                    changed();
                     refresh();
                 })
                 .setNegativeButton(android.R.string.cancel, null)

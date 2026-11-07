@@ -2082,7 +2082,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
         heroDesc.setVisibility(TextUtils.isEmpty(it.description) ? View.GONE : View.VISIBLE);
         heroOpen.setText("▶  " + (it.resume ? getString(R.string.resume) : getString(R.string.open_in, openInLabel())));
         hero.post(this::placeHero);   // the blurb's height changes with the title
-        showBackdrop(it.backdrop);
+        showBackdrop(it.clean);
         scheduleFeatured();
     }
 
@@ -2122,7 +2122,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
         }
         heroShown = true;
         // Back from the rows, where the backdrop followed the cards: the hero's own picture again.
-        String own = featured.get(featuredIndex).backdrop;
+        String own = featured.get(featuredIndex).clean;
         if (own != null && !own.equals(heroArt.getTag())) showBackdrop(own);
     }
 
@@ -2366,7 +2366,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener, M
         heroShown = false;
         Featured.Item it = row.cards.item(position);
         handler.removeCallbacks(followCard);
-        followUrl = it == null ? null : it.backdrop;
+        followUrl = it == null ? null : it.clean;
         if (followUrl != null) handler.postDelayed(followCard, 350);   // not for every card skipped past
         // Scroll the grid just enough to show the whole row.
         float top = rowsPanel.getTranslationY() + row.view.getTop(), bottom = top + row.view.getHeight();

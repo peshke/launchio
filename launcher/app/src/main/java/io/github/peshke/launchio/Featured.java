@@ -41,6 +41,8 @@ final class Featured {
         boolean resume;
         /** How far into it you are, 0 to 1; 0 when the app did not say. */
         float progress;
+        /** The hero's backdrop: a clean wide picture, no title text or logo on it. */
+        String clean;
         /** Watch Next's last watched time and position: they change when you watch it again. */
         String seen;
     }
@@ -112,10 +114,15 @@ final class Featured {
                 } catch (Exception ignored) {
                     // not an intent we can read: keep the row's own art
                 }
-                if (plain && it.id != null && it.id.startsWith("tt")) {
+                // The app's own art can be a poster with the title on it: the hero takes Metahub's clean background.
+                it.clean = it.backdrop;
+                if (it.id != null && it.id.startsWith("tt")) {
                     String imdb = it.id.split(":")[0];
-                    it.backdrop = "https://images.metahub.space/background/medium/" + imdb + "/img";
-                    it.logo = "https://images.metahub.space/logo/medium/" + imdb + "/img";
+                    it.clean = "https://images.metahub.space/background/medium/" + imdb + "/img";
+                    if (plain) {
+                        it.backdrop = it.clean;
+                        it.logo = "https://images.metahub.space/logo/medium/" + imdb + "/img";
+                    }
                 }
                 it.key = "show/" + it.pkg + "/" + it.title;
                 it.seen = c.getLong(10) + "/" + c.getLong(8);
@@ -170,6 +177,7 @@ final class Featured {
             it.id = str(j, "id");
             it.title = str(j, "name");
             it.backdrop = str(j, "background");
+            it.clean = it.backdrop;
             if (it.id == null || it.title == null || it.backdrop == null) continue;
             it.type = str(j, "type") != null ? str(j, "type") : type;
             it.description = str(j, "description");

@@ -49,7 +49,7 @@ final class Feed {
                 List<Featured.Item> all = watching ? Featured.watching(ctx, Featured.ROW, plainArt) : new ArrayList<>();
                 // The hero takes your latest few that have a picture; the row takes them all.
                 List<Featured.Item> shows = new ArrayList<>();
-                for (Featured.Item w : all) if (w.backdrop != null && shows.size() < heroShows) shows.add(w);
+                for (Featured.Item w : all) if (w.clean != null && shows.size() < heroShows) shows.add(w);
                 for (Featured.Item show : shows) {
                     if (!blurbs.containsKey(show.key)) {
                         Featured.describe(addon, show);
